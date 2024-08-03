@@ -56,7 +56,12 @@
             const imagePath = `${serverURL}/${photoFile}`; // Doğru URL formatını kullan
 
             fetch(imagePath)
-                .then(response => response.blob())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Fotoğraf yükleme hatası: ' + response.statusText);
+                    }
+                    return response.blob();
+                })
                 .then(blob => {
                     const reader = new FileReader();
                     reader.onload = function (event) {
@@ -67,11 +72,22 @@
                         const gpsLongitude = tags['GPSLongitude'];
                         const dateTaken = tags['DateTimeOriginal'];
 
-                        if (!gpsLatitude || !gpsLongitude) return;
+                        // Konsola EXIF verilerini yazdırma
+                        console.log(`Fotoğraf: ${photoFile}`);
+                        console.log(`EXIF GPSLatitude: ${gpsLatitude}`);
+                        console.log(`EXIF GPSLongitude: ${gpsLongitude}`);
+                        console.log(`EXIF Date Taken: ${dateTaken}`);
+
+                        if (!gpsLatitude || !gpsLongitude) {
+                            console.log("Koordinatlar bulunamadı.");
+                            return;
+                        }
 
                         // Koordinatları derecelere çevirme
                         const lat = convertToDegrees(gpsLatitude);
                         const lon = convertToDegrees(gpsLongitude);
+
+                        console.log(`Koordinatlar: Latitude = ${lat}, Longitude = ${lon}`);
 
                         // Fotoğrafı base64 formatına dönüştürme
                         const imgBase64 = event.target.result.split(',')[1]; // Base64'e çevir
@@ -90,18 +106,19 @@
                                 `;
                                 L.marker([lat, lon]).addTo(map)
                                     .bindPopup(popupContent);
-                            });
+                            })
+                            .catch(error => console.error('Adres alma hatası:', error));
                     };
                     reader.readAsDataURL(blob);
                 })
-                .catch(error => console.error('Error fetching image:', error));
+                .catch(error => console.error('Fotoğraf yükleme hatası:', error));
         });
 
         // Dereceye çevirme fonksiyonu
         function convertToDegrees(value) {
-            const d = value.value[0];
-            const m = value.value[1];
-            const s = value.value[2];
+            const d = value.value[0].numerator / value.value[0].denominator;
+            const m = value.value[1].numerator / value.value[1].denominator;
+            const s = value.value[2].numerator / value.value[2].denominator;
             return d + (m / 60.0) + (s / 3600.0);
         }
 
@@ -128,7 +145,7 @@
                     map.setView([newLat, newLng], map.getZoom());  // Haritayı güncel konuma odakla
                     console.log("Updated vehicle position:", newLat, newLng); // Konsola yeni konumu yazdır
                 })
-                .catch(error => console.error('Error fetching vehicle location:', error));
+                .catch(error => console.error('Araç konumunu güncelleme hatası:', error));
         }
 
         // Konumu güncelle ve her 5 saniyede bir güncelle
