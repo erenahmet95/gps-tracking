@@ -1,6 +1,7 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
 import random
+import os
 
 app = Flask(__name__)
 CORS(app)  # CORS'u etkinleştir
@@ -18,4 +19,6 @@ def vehicle_location():
         "longitude": lon
     })
 
-# app.run() çağrısını kaldırın
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))  # Render'ın sağladığı PORT'u al
+    app.run(host='0.0.0.0', port=port)
