@@ -109,10 +109,11 @@
                     })
                     .catch(error => console.error('Adres alma hatası:', error));
             };
-            reader.readAsDataURL(blob);
+            reader.readAsArrayBuffer(blob);  // Doğru format kullanılıyor
         })
         .catch(error => console.error('Fotoğraf yükleme hatası:', error));
 });
+
         // Dereceye çevirme fonksiyonu
         function convertToDegrees(value) {
             const d = value.value[0].numerator / value.value[0].denominator;
