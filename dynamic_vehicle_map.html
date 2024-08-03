@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynamic Vehicle and Photo Map</title>
+    <title>Dynamic Photo Map</title>
     <style>
         #map {
             height: 600px;
@@ -20,32 +20,15 @@
     <script src="photos.js"></script>
 </head>
 <body>
-    <h1>Dynamic Vehicle and Photo Map</h1>
+    <h1>Dynamic Photo Map</h1>
     <div id="map"></div>
 
     <script>
-        // Mapbox API Key
-        const MAPBOX_API_KEY = 'pk.eyJ1IjoiZXJlbmFobWV0OTUiLCJhIjoiY2x3czZnZm1yMDBkNDJrcXo0bW93OTlsdCJ9.w-qOTb7nP3H2kC5FhzdXLg';
-
         // Başlangıçta haritayı oluşturma
         var map = L.map('map').setView([51.48821, 8.30442], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 18,
             attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(map);
-
-        // Araç marker'ını oluşturma
-        var vehicleMarker = L.marker([51.48821, 8.30442], {
-            icon: L.icon({
-                iconUrl: 'https://leafletjs.com/examples/custom-icons/leaf-green.png',
-                shadowUrl: 'https://leafletjs.com/examples/custom-icons/leaf-shadow.png',
-
-                iconSize:     [38, 95], // icon boyutu
-                shadowSize:   [50, 64], // gölge boyutu
-                iconAnchor:   [22, 94], // icon'un haritadaki konumunu belirleyen nokta
-                shadowAnchor: [4, 62],  // gölge konumu
-                popupAnchor:  [-3, -76] // popup'un icon konumuna göre açılma noktası
-            })
         }).addTo(map);
 
         // Sunucu URL'sini belirtin
@@ -83,75 +66,30 @@
                             return;
                         }
 
-                        // Koordinatları derecelere çevirme
-                        const lat = convertToDegrees(gpsLatitude);
-                        const lon = convertToDegrees(gpsLongitude);
+                        // Doğrudan enlem ve boylam değerlerini kullanarak konum belirleme
+                        const lat = gpsLatitude.description;
+                        const lon = gpsLongitude.description;
 
                         console.log(`Koordinatlar: Latitude = ${lat}, Longitude = ${lon}`);
 
                         // Fotoğrafı base64 formatına dönüştürme
                         const imgBase64 = event.target.result.split(',')[1];
 
-                        // Koordinatlara göre adres bilgisi alma
-                        getAddressFromCoordinates(lat, lon)
-                            .then(address => {
-                                const popupContent = `
-                                    <div>
-                                        <a href="data:image/jpeg;base64,${imgBase64}" target="_blank">
-                                            <img src="data:image/jpeg;base64,${imgBase64}" width="100px" height="100px">
-                                        </a>
-                                        <p><b>Address:</b> ${address}</p>
-                                        <p><b>Date:</b> ${dateTaken ? dateTaken.description : "Date not found"}</p>
-                                    </div>
-                                `;
-                                L.marker([lat, lon]).addTo(map)
-                                    .bindPopup(popupContent);
-                            })
-                            .catch(error => console.error('Adres alma hatası:', error));
+                        const popupContent = `
+                            <div>
+                                <a href="data:image/jpeg;base64,${imgBase64}" target="_blank">
+                                    <img src="data:image/jpeg;base64,${imgBase64}" width="100px" height="100px">
+                                </a>
+                                <p><b>Date:</b> ${dateTaken ? dateTaken.description : "Date not found"}</p>
+                            </div>
+                        `;
+                        L.marker([lat, lon]).addTo(map)
+                            .bindPopup(popupContent);
                     };
                     reader.readAsArrayBuffer(blob);  // Doğru format kullanılıyor
                 })
                 .catch(error => console.error('Fotoğraf yükleme hatası:', error));
         });
-
-        // Dereceye çevirme fonksiyonu
-        function convertToDegrees(value) {
-            const degrees = value.value[0].numerator / value.value[0].denominator;
-            const minutes = value.value[1].numerator / value.value[1].denominator;
-            const seconds = value.value[2].numerator / value.value[2].denominator;
-
-            return degrees + (minutes / 60) + (seconds / 3600);
-        }
-
-        // Koordinatlara göre adres bilgisi alma fonksiyonu
-        function getAddressFromCoordinates(lat, lon) {
-            return fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${lon},${lat}.json?access_token=${MAPBOX_API_KEY}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.features && data.features.length > 0) {
-                        return data.features[0].place_name;
-                    }
-                    return 'Address not found';
-                });
-        }
-
-        // Araç konumunu güncelleyen fonksiyon
-        function updateVehicleLocation() {
-            fetch('http://localhost:5000/api/vehicle-location')  // Flask API adresi
-                .then(response => response.json())
-                .then(data => {
-                    var newLat = data.latitude;
-                    var newLng = data.longitude;
-                    vehicleMarker.setLatLng([newLat, newLng]);
-                    map.setView([newLat, newLng], map.getZoom());  // Haritayı güncel konuma odakla
-                    console.log("Updated vehicle position:", newLat, newLng); // Konsola yeni konumu yazdır
-                })
-                .catch(error => console.error('Araç konumunu güncelleme hatası:', error));
-        }
-
-        // Konumu güncelle ve her 5 saniyede bir güncelle
-        updateVehicleLocation();
-        setInterval(updateVehicleLocation, 5000);  // Her 5 saniyede bir konumu günceller
 
     </script>
 </body>
