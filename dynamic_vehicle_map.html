@@ -17,7 +17,7 @@
     <!-- ExifReader.js for reading EXIF data -->
     <script src="https://cdn.jsdelivr.net/npm/exifreader/dist/exif-reader.min.js"></script>
     <!-- Photo files list -->
-    <script src="photos.js"></script>
+    <script src="photos.js"></script> <!-- photos.js dosyasını buraya dahil edin -->
 </head>
 <body>
     <h1>Dynamic Vehicle and Photo Map</h1>
@@ -74,9 +74,9 @@
 
                         // Konsola EXIF verilerini yazdırma
                         console.log(`Fotoğraf: ${photoFile}`);
-                        console.log(`EXIF GPSLatitude: ${gpsLatitude}`);
-                        console.log(`EXIF GPSLongitude: ${gpsLongitude}`);
-                        console.log(`EXIF Date Taken: ${dateTaken}`);
+                        console.log(`EXIF GPSLatitude: ${gpsLatitude ? gpsLatitude.description : "Bulunamadı"}`);
+                        console.log(`EXIF GPSLongitude: ${gpsLongitude ? gpsLongitude.description : "Bulunamadı"}`);
+                        console.log(`EXIF Date Taken: ${dateTaken ? dateTaken.description : "Bulunamadı"}`);
 
                         if (!gpsLatitude || !gpsLongitude) {
                             console.log("Koordinatlar bulunamadı.");
