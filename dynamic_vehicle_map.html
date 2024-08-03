@@ -53,67 +53,66 @@
 
         // Fotoğraf bilgilerini okuma ve haritaya ekleme
         photoFiles.forEach(photoFile => {
-            const imagePath = `${serverURL}/${photoFile}`; // Doğru URL formatını kullan
+    const imagePath = `${serverURL}/${photoFile}`;
 
-            fetch(imagePath)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Fotoğraf yükleme hatası: ' + response.statusText);
-                    }
-                    return response.blob();
-                })
-                .then(blob => {
-                    const reader = new FileReader();
-                    reader.onload = function (event) {
-                        const tags = ExifReader.load(event.target.result);
+    fetch(imagePath)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Fotoğraf yükleme hatası: ' + response.statusText);
+            }
+            return response.blob();
+        })
+        .then(blob => {
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                const tags = ExifReader.load(event.target.result);
 
-                        // EXIF verilerini okuma
-                        const gpsLatitude = tags['GPSLatitude'];
-                        const gpsLongitude = tags['GPSLongitude'];
-                        const dateTaken = tags['DateTimeOriginal'];
+                // EXIF verilerini okuma
+                const gpsLatitude = tags['GPSLatitude'];
+                const gpsLongitude = tags['GPSLongitude'];
+                const dateTaken = tags['DateTimeOriginal'];
 
-                        // Konsola EXIF verilerini yazdırma
-                        console.log(`Fotoğraf: ${photoFile}`);
-                        console.log(`EXIF GPSLatitude: ${gpsLatitude ? gpsLatitude.description : "Bulunamadı"}`);
-                        console.log(`EXIF GPSLongitude: ${gpsLongitude ? gpsLongitude.description : "Bulunamadı"}`);
-                        console.log(`EXIF Date Taken: ${dateTaken ? dateTaken.description : "Bulunamadı"}`);
+                // Konsola EXIF verilerini yazdırma
+                console.log(`Fotoğraf: ${photoFile}`);
+                console.log(`EXIF GPSLatitude: ${gpsLatitude ? gpsLatitude.description : "Bulunamadı"}`);
+                console.log(`EXIF GPSLongitude: ${gpsLongitude ? gpsLongitude.description : "Bulunamadı"}`);
+                console.log(`EXIF Date Taken: ${dateTaken ? dateTaken.description : "Bulunamadı"}`);
 
-                        if (!gpsLatitude || !gpsLongitude) {
-                            console.log("Koordinatlar bulunamadı.");
-                            return;
-                        }
+                if (!gpsLatitude || !gpsLongitude) {
+                    console.log("Koordinatlar bulunamadı.");
+                    return;
+                }
 
-                        // Koordinatları derecelere çevirme
-                        const lat = convertToDegrees(gpsLatitude);
-                        const lon = convertToDegrees(gpsLongitude);
+                // Koordinatları derecelere çevirme
+                const lat = convertToDegrees(gpsLatitude);
+                const lon = convertToDegrees(gpsLongitude);
 
-                        console.log(`Koordinatlar: Latitude = ${lat}, Longitude = ${lon}`);
+                console.log(`Koordinatlar: Latitude = ${lat}, Longitude = ${lon}`);
 
-                        // Fotoğrafı base64 formatına dönüştürme
-                        const imgBase64 = event.target.result.split(',')[1]; // Base64'e çevir
+                // Fotoğrafı base64 formatına dönüştürme
+                const imgBase64 = event.target.result.split(',')[1];
 
-                        // Koordinatlara göre adres bilgisi alma
-                        getAddressFromCoordinates(lat, lon)
-                            .then(address => {
-                                const popupContent = `
-                                    <div>
-                                        <a href="data:image/jpeg;base64,${imgBase64}" target="_blank">
-                                            <img src="data:image/jpeg;base64,${imgBase64}" width="100px" height="100px">
-                                        </a>
-                                        <p><b>Address:</b> ${address}</p>
-                                        <p><b>Date:</b> ${dateTaken ? dateTaken.description : "Date not found"}</p>
-                                    </div>
-                                `;
-                                L.marker([lat, lon]).addTo(map)
-                                    .bindPopup(popupContent);
-                            })
-                            .catch(error => console.error('Adres alma hatası:', error));
-                    };
-                    reader.readAsDataURL(blob);
-                })
-                .catch(error => console.error('Fotoğraf yükleme hatası:', error));
-        });
-
+                // Koordinatlara göre adres bilgisi alma
+                getAddressFromCoordinates(lat, lon)
+                    .then(address => {
+                        const popupContent = `
+                            <div>
+                                <a href="data:image/jpeg;base64,${imgBase64}" target="_blank">
+                                    <img src="data:image/jpeg;base64,${imgBase64}" width="100px" height="100px">
+                                </a>
+                                <p><b>Address:</b> ${address}</p>
+                                <p><b>Date:</b> ${dateTaken ? dateTaken.description : "Date not found"}</p>
+                            </div>
+                        `;
+                        L.marker([lat, lon]).addTo(map)
+                            .bindPopup(popupContent);
+                    })
+                    .catch(error => console.error('Adres alma hatası:', error));
+            };
+            reader.readAsDataURL(blob);
+        })
+        .catch(error => console.error('Fotoğraf yükleme hatası:', error));
+});
         // Dereceye çevirme fonksiyonu
         function convertToDegrees(value) {
             const d = value.value[0].numerator / value.value[0].denominator;
