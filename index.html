@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EXIF Data Reader</title>
+    <!-- ExifReader.js for reading EXIF data -->
+    <script src="https://cdn.jsdelivr.net/npm/exifreader/dist/exif-reader.min.js"></script>
+    <!-- Photo files list -->
+    <script src="photos.js"></script>
+</head>
+<body>
+    <h1>EXIF Data Reader</h1>
+    <script>
+        // Sunucu URL'sini belirtin
+        const serverURL = 'https://erenahmet95.github.io/gps-tracking'; // GitHub Pages URL'nizi ekleyin
+
+        // Fotoğraf bilgilerini okuma ve konsola yazdırma
+        photoFiles.forEach(photoFile => {
+            const imagePath = `${serverURL}/${photoFile}`; // Doğru URL formatını kullan
+
+            fetch(imagePath)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Fotoğraf yükleme hatası: ' + response.statusText);
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    const reader = new FileReader();
+                    reader.onload = function (event) {
+                        const tags = ExifReader.load(event.target.result);
+
+                        // EXIF verilerini okuma
+                        const gpsLatitude = tags['GPSLatitude'];
+                        const gpsLongitude = tags['GPSLongitude'];
+                        const dateTaken = tags['DateTimeOriginal'];
+
+                        // Konsola EXIF verilerini yazdırma
+                        console.log(`Fotoğraf: ${photoFile}`);
+                        console.log(`EXIF GPSLatitude: ${gpsLatitude ? gpsLatitude.description : "Bulunamadı"}`);
+                        console.log(`EXIF GPSLongitude: ${gpsLongitude ? gpsLongitude.description : "Bulunamadı"}`);
+                        console.log(`EXIF Date Taken: ${dateTaken ? dateTaken.description : "Bulunamadı"}`);
+                    };
+                    reader.readAsArrayBuffer(blob);  // ArrayBuffer formatında oku
+                })
+                .catch(error => console.error('Fotoğraf yükleme hatası:', error));
+        });
+    </script>
+</body>
+</html>
