@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Photo and Vehicle Map</title>
+    <style>
+        #map {
+            height: 600px;
+            width: 100%;
+        }
+    </style>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <!-- ExifReader.js for reading EXIF data -->
+    <script src="https://cdn.jsdelivr.net/npm/exifreader/dist/exif-reader.min.js"></script>
+    <!-- Photo files list -->
+    <script src="photos.js"></script>
+</head>
+<body>
+    <h1>Dynamic Photo and Vehicle Map</h1>
+    <div id="map"></div>
+
+    <script>
+        // Haritayı başlatma - Belirtilen koordinatlara ve zoom seviyesine ayarla
+        var map = L.map('map').setView([51.49268579318188, 8.431149492160445], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Sunucu URL'si (GitHub Pages veya başka bir yer)
+        const serverURL = 'https://erenahmet95.github.io/gps-tracking';
+
+        let totalLat = 0;
+        let totalLon = 0;
+        let count = 0;
+
+        // Fotoğraf dosyalarını işleme
+        photoFiles.forEach(photoFile => {
+            const imagePath = `${serverURL}/${photoFile}`;
+
+            fetch(imagePath)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Fotoğraf yükleme hatası: ' + response.statusText);
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    const reader = new FileReader();
+                    reader.onload = function (event) {
+                        // EXIF verilerini okuyalım
+                        const tags = ExifReader.load(event.target.result);
+
+                        // EXIF verilerini al
+                        const gpsLatitude = tags['GPSLatitude'];
+                        const gpsLongitude = tags['GPSLongitude'];
+                        const dateTaken = tags['DateTimeOriginal'];
+
+                        // Konsola EXIF verilerini yazdır
+                        console.log(`Fotoğraf: ${photoFile}`);
+                        console.log(`EXIF GPSLatitude: ${gpsLatitude ? gpsLatitude.description : "Bulunamadı"}`);
+                        console.log(`EXIF GPSLongitude: ${gpsLongitude ? gpsLongitude.description : "Bulunamadı"}`);
+                        console.log(`EXIF Date Taken: ${dateTaken ? dateTaken.description : "Bulunamadı"}`);
+
+                        if (!gpsLatitude || !gpsLongitude) {
+                            console.log("Koordinatlar bulunamadı.");
+                            return;
+                        }
+
+                        // Enlem ve boylam değerlerini al
+                        const lat = parseFloat(gpsLatitude.description);
+                        const lon = parseFloat(gpsLongitude.description);
+
+                        // Koordinatları topla
+                        totalLat += lat;
+                        totalLon += lon;
+                        count++;
+
+                        console.log(`Koordinatlar: Latitude = ${lat}, Longitude = ${lon}`);
+
+                        // Fotoğrafı base64 formatına dönüştür
+                        const imgBase64 = arrayBufferToBase64(event.target.result);
+
+                        // Marker ekle ve popup oluştur
+                        const popupContent = `
+                            <div>
+                                <a href="data:image/jpeg;base64,${imgBase64}" target="_blank">
+                                    <img src="data:image/jpeg;base64,${imgBase64}" width="100px" height="100px">
+                                </a>
+                                <p><b>Date:</b> ${dateTaken ? dateTaken.description : "Date not found"}</p>
+                            </div>
+                        `;
+
+                        // Fotoğraf marker ekleme
+                        const marker = L.marker([lat, lon]).addTo(map)
+                            .bindPopup(popupContent);
+
+                        // Marker konumlandırma mesajı
+                        console.log(`Marker added at Latitude: ${lat}, Longitude: ${lon}`);
+                    };
+
+                    // EXIF için ArrayBuffer, base64 dönüşümü için
+                    reader.readAsArrayBuffer(blob);
+                })
+                .catch(error => console.error('Fotoğraf yükleme hatası:', error));
+        });
+
+        // Araç marker'ı
+        let vehicleMarker;
+
+        // Araç ikonu
+        const vehicleIcon = L.icon({
+            iconUrl: 'https://erenahmet95.github.io/gps-tracking/icon.png',  // Kendi aracınızın ikonu
+            iconSize: [50, 50],  // İkonun boyutu
+            iconAnchor: [25, 50],  // İkonun haritada yerleştirildiği nokta
+            popupAnchor: [0, -50]  // Popup'un ikon konumuna göre açılma noktası
+        });
+
+        // Başlangıçta koordinatların ortalamasını al
+        setTimeout(() => {
+            if (count > 0) {
+                const avgLat = totalLat / count;
+                const avgLon = totalLon / count;
+                console.log(`Araç başlangıç konumu: Latitude = ${avgLat}, Longitude = ${avgLon}`);
+
+                // Araç marker'ını ortalama koordinatlarla oluştur
+                vehicleMarker = L.marker([avgLat, avgLon], { icon: vehicleIcon }).addTo(map);
+
+                // Haritayı ortalama konuma odakla
+                map.setView([avgLat, avgLon], 15);
+            }
+        }, 1000); // Fotoğrafların yüklenmesi için zaman tanıyın
+
+        // ArrayBuffer'ı Base64'e dönüştürme fonksiyonu
+        function arrayBufferToBase64(buffer) {
+            let binary = '';
+            const bytes = new Uint8Array(buffer);
+            const len = bytes.byteLength;
+            for (let i = 0; i < len; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return window.btoa(binary);
+        }
+
+        // Dinamik araç konumunu güncelleme fonksiyonu
+        function updateVehicleLocation() {
+            fetch('https://gps-tracking-i0pv.onrender.com/api/vehicle-location')  // Render'daki Flask API adresi
+                .then(response => response.json())
+                .then(data => {
+                    var newLat = data.latitude;
+                    var newLng = data.longitude;
+                    vehicleMarker.setLatLng([newLat, newLng]);
+                    map.setView([newLat, newLng], map.getZoom());  // Haritayı güncel konuma odakla
+                    console.log("Updated vehicle position:", newLat, newLng); // Konsola yeni konumu yazdır
+                })
+                .catch(error => console.error('Araç konumunu güncelleme hatası:', error));
+        }
+
+        // Konumu güncelle ve her 5 saniyede bir güncelle
+        setTimeout(() => {
+            if (vehicleMarker) {
+                updateVehicleLocation();
+                setInterval(updateVehicleLocation, 5000);  // Her 5 saniyede bir konumu günceller
+            }
+        }, 2000); // Araç marker'ı oluşturulduktan sonra konumu güncellemeye başla
+
+    </script>
+</body>
+</html>
