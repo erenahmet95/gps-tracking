@@ -24,19 +24,19 @@
     <div id="map"></div>
 
     <script>
-        // Başlangıçta haritayı oluşturma
+        // Haritayı başlatma
         var map = L.map('map').setView([51.48821, 8.30442], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 18,
             attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
-        // Sunucu URL'sini belirtin
-        const serverURL = 'https://erenahmet95.github.io/gps-tracking'; // GitHub Pages URL'nizi ekleyin
+        // Sunucu URL'si (GitHub Pages veya başka bir yer)
+        const serverURL = 'https://erenahmet95.github.io/gps-tracking'; 
 
-        // Fotoğraf bilgilerini okuma ve haritaya ekleme
+        // Fotoğraf dosyalarını işleme
         photoFiles.forEach(photoFile => {
-            const imagePath = `${serverURL}/${photoFile}`; // Doğru URL formatını kullan
+            const imagePath = `${serverURL}/${photoFile}`;
 
             fetch(imagePath)
                 .then(response => {
@@ -50,12 +50,12 @@
                     reader.onload = function (event) {
                         const tags = ExifReader.load(event.target.result);
 
-                        // EXIF verilerini okuma
+                        // EXIF verilerini al
                         const gpsLatitude = tags['GPSLatitude'];
                         const gpsLongitude = tags['GPSLongitude'];
                         const dateTaken = tags['DateTimeOriginal'];
 
-                        // Konsola EXIF verilerini yazdırma
+                        // Konsola EXIF verilerini yazdır
                         console.log(`Fotoğraf: ${photoFile}`);
                         console.log(`EXIF GPSLatitude: ${gpsLatitude ? gpsLatitude.description : "Bulunamadı"}`);
                         console.log(`EXIF GPSLongitude: ${gpsLongitude ? gpsLongitude.description : "Bulunamadı"}`);
@@ -66,15 +66,16 @@
                             return;
                         }
 
-                        // Doğrudan enlem ve boylam değerlerini kullanarak konum belirleme
-                        const lat = gpsLatitude.description;
-                        const lon = gpsLongitude.description;
+                        // Enlem ve boylam değerlerini al
+                        const lat = parseFloat(gpsLatitude.description);
+                        const lon = parseFloat(gpsLongitude.description);
 
                         console.log(`Koordinatlar: Latitude = ${lat}, Longitude = ${lon}`);
 
-                        // Fotoğrafı base64 formatına dönüştürme
+                        // Fotoğrafı base64 formatına dönüştür
                         const imgBase64 = event.target.result.split(',')[1];
 
+                        // Marker ekle ve popup oluştur
                         const popupContent = `
                             <div>
                                 <a href="data:image/jpeg;base64,${imgBase64}" target="_blank">
@@ -83,14 +84,15 @@
                                 <p><b>Date:</b> ${dateTaken ? dateTaken.description : "Date not found"}</p>
                             </div>
                         `;
+
+                        // Marker ekleme
                         L.marker([lat, lon]).addTo(map)
                             .bindPopup(popupContent);
                     };
-                    reader.readAsArrayBuffer(blob);  // Doğru format kullanılıyor
+                    reader.readAsArrayBuffer(blob);  // Doğru formatta oku
                 })
                 .catch(error => console.error('Fotoğraf yükleme hatası:', error));
         });
-
     </script>
 </body>
 </html>
