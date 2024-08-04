@@ -277,7 +277,7 @@
                         <p><b>${vehicle.name}</b></p>
                         <p>Başlangıç Saati: ${vehicle.startTime.toLocaleTimeString()}</p>
                         <p>Toplam Mesafe: <span id="distance${vehicle.name.replace(/\s+/g, '')}">0</span> m</p>
-                        <button class="togglePath" onclick="togglePath('${vehicle.name.replace(/\s+/g, '')}')">Güzergahı Gizle/Göster</button>
+                        <button class="togglePath" onclick="togglePath('${vehicle.name}')">Güzergahı Gizle/Göster</button>
                     </div>
                 `;
                 vehicle.marker.bindPopup(popupContent);
@@ -342,7 +342,7 @@
                     <p><b>${vehicle.name}</b></p>
                     <p>Başlangıç Saati: ${vehicle.startTime.toLocaleTimeString()}</p>
                     <p>Toplam Mesafe: <span id="distance${vehicle.name.replace(/\s+/g, '')}">${vehicle.totalDistance.toFixed(2)}</span> m</p>
-                    <button class="togglePath" onclick="togglePath('${vehicle.name.replace(/\s+/g, '')}')">Güzergahı Gizle/Göster</button>
+                    <button class="togglePath" onclick="togglePath('${vehicle.name}')">Güzergahı Gizle/Göster</button>
                 </div>
             `;
             vehicle.marker.bindPopup(popupContent);
