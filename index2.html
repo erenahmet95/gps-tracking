@@ -5,98 +5,110 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dynamic Multi-Vehicle Tracking Map</title>
     <style>
+        /* Genel sayfa ve harita stili */
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
         #map {
-            height: 600px;
+            height: 80vh; /* Haritanın yüksekliğini sayfa yüksekliğinin %80'i yapıyoruz */
             width: 100%;
         }
 
-        #vehicleButtons {
+        /* Araç ve dokümantasyon kontrol menüsü stili */
+        #menu {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            top: 100px; /* Haritanın üst kısmına 100px boşluk bırakıyoruz */
+            left: 10px;
             z-index: 1000;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .vehicleButton {
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-bottom: 10px;
-            display: inline-block;
-            font-size: 14px;
-            width: 150px;
-        }
-
-        .vehicle1Button {
-            background: #FF5733; /* Red for Vehicle 1 */
-        }
-
-        .vehicle2Button {
-            background: #33B5FF; /* Blue for Vehicle 2 */
-        }
-
-        .infoButton {
-            background: #28a745;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 12px;
-            width: 100%;
-            margin-top: 5px;
-        }
-
-        .togglePath {
-            margin-top: 5px;
-            background: #ffc107;
-            color: black;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 12px;
-            width: 100%;
-        }
-
-        .infoPopup {
-            background: white;
+            background-color: white;
             padding: 10px;
             border-radius: 5px;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
             max-width: 200px;
         }
+
+        #menu h2 {
+            margin-top: 0;
+            font-size: 16px;
+            color: #333;
+        }
+
+        #menu ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #menu ul li {
+            margin-bottom: 5px;
+        }
+
+        .menuItem {
+            cursor: pointer;
+            margin: 5px 0;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .submenu {
+            margin-left: 15px;
+            display: none; /* Alt menü başlangıçta gizli olacak */
+        }
+
+        /* Başlık stili */
+        #header {
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            position: relative;
+            z-index: 1000;
+        }
     </style>
     <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <!-- Leaflet JavaScript -->
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <!-- ExifReader.js for reading EXIF data -->
-    <script src="https://cdn.jsdelivr.net/npm/exifreader/dist/exif-reader.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <!-- Leaflet Measure CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet-measure@3.1.0/dist/leaflet-measure.css" />
+    <!-- Leaflet Ruler CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/gokertanrisever/leaflet-ruler@master/src/leaflet-ruler.css" />
+    
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Leaflet Measure JavaScript -->
     <script src="https://unpkg.com/leaflet-measure@3.1.0/dist/leaflet-measure.js"></script>
+    <!-- Leaflet Ruler JavaScript -->
+    <script src="https://cdn.jsdelivr.net/gh/gokertanrisever/leaflet-ruler@master/src/leaflet-ruler.js"></script>
+    
+    <!-- ExifReader.js for reading EXIF data -->
+    <script src="https://cdn.jsdelivr.net/npm/exifreader/dist/exif-reader.min.js"></script>
     <!-- Photo files list -->
-    <script src="photos.js"></script>
+    <script src="https://gps-tracking-i0pv.onrender.com/static/photos.js"></script> <!-- photos.js sunucudan yükleniyor -->
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="https://erenahmet95.github.io/gps-tracking/favicon.ico">
 </head>
 <body>
-    <h1>Dynamic Multi-Vehicle Tracking Map</h1>
+    <!-- Başlık -->
+    <div id="header">
+        <h1>Dynamic Multi-Vehicle Tracking Map</h1>
+    </div>
+
+    <!-- Harita -->
     <div id="map"></div>
 
-    <!-- Araç Butonları -->
-    <div id="vehicleButtons">
-        <button class="vehicleButton vehicle1Button" onclick="selectVehicle(1)">Araç 1</button>
-        <button class="infoButton" onclick="showVehiclePopup(1)">Mesafe Bilgileri</button>
-        
-        <button class="vehicleButton vehicle2Button" onclick="selectVehicle(2)">Araç 2</button>
-        <button class="infoButton" onclick="showVehiclePopup(2)">Mesafe Bilgileri</button>
+    <!-- Menü -->
+    <div id="menu">
+        <h2>Katman Kontrolü</h2>
+        <ul>
+            <li class="menuItem" onclick="toggleSubmenu('baustelleSubmenu')">Baustellefortschritt</li>
+            <ul id="baustelleSubmenu" class="submenu">
+                <li><input type="checkbox" id="vehicleToggle" onclick="toggleVehicles()"> Araçlar</li>
+            </ul>
+            <li class="menuItem" onclick="toggleSubmenu('dokumantationSubmenu')">Dokumantation</li>
+            <ul id="dokumantationSubmenu" class="submenu">
+                <li><input type="checkbox" id="markerToggle" onclick="toggleMarkers()"> Fotoğraflar</li>
+            </ul>
+        </ul>
     </div>
 
     <script>
@@ -116,6 +128,9 @@
             activeColor: '#ff0000',
             completedColor: '#ff0000'
         }).addTo(map);
+
+        // Ruler eklentisini haritaya ekleyin
+        L.control.ruler().addTo(map);
 
         // Araçlar için veriler
         const vehicles = {
@@ -145,57 +160,65 @@
 
         let currentVehicle = vehicles[1]; // Varsayılan araç
 
+        // Nextcloud için temel URL
+        const nextcloudBaseUrl = "https://cloud.mt-kabelbau.de/remote.php/webdav/";
+
         // Fotoğraf dosyalarını işleme
-        const serverURL = 'https://erenahmet95.github.io/gps-tracking';
         let totalLat = 0;
         let totalLon = 0;
         let count = 0;
+        let photoMarkers = []; // Fotoğraf marker'larını tutmak için dizi
 
         photoFiles.forEach(photoFile => {
-            const imagePath = `${serverURL}/${photoFile}`;
+            const photoUrl = nextcloudBaseUrl + encodeURIComponent(photoFile);
 
-            fetch(imagePath)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Fotoğraf yükleme hatası: ' + response.statusText);
+            fetch(photoUrl, {
+                headers: {
+                    Authorization: 'Basic ' + btoa('Eren Isik:A+b=123456789') // Nextcloud kimlik doğrulama bilgileri
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Fotoğraf yükleme hatası: ' + response.statusText);
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                const reader = new FileReader();
+                reader.onload = function (event) {
+                    const tags = ExifReader.load(event.target.result);
+                    const gpsLatitude = tags['GPSLatitude'];
+                    const gpsLongitude = tags['GPSLongitude'];
+                    const dateTaken = tags['DateTimeOriginal'];
+
+                    if (!gpsLatitude || !gpsLongitude) {
+                        return;
                     }
-                    return response.blob();
-                })
-                .then(blob => {
-                    const reader = new FileReader();
-                    reader.onload = function (event) {
-                        const tags = ExifReader.load(event.target.result);
-                        const gpsLatitude = tags['GPSLatitude'];
-                        const gpsLongitude = tags['GPSLongitude'];
-                        const dateTaken = tags['DateTimeOriginal'];
 
-                        if (!gpsLatitude || !gpsLongitude) {
-                            return;
-                        }
+                    const lat = parseFloat(gpsLatitude.description);
+                    const lon = parseFloat(gpsLongitude.description);
 
-                        const lat = parseFloat(gpsLatitude.description);
-                        const lon = parseFloat(gpsLongitude.description);
+                    totalLat += lat;
+                    totalLon += lon;
+                    count++;
 
-                        totalLat += lat;
-                        totalLon += lon;
-                        count++;
+                    const imgBase64 = arrayBufferToBase64(event.target.result);
+                    const popupContent = `
+                        <div>
+                            <a href="data:image/jpeg;base64,${imgBase64}" target="_blank">
+                                <img src="data:image/jpeg;base64,${imgBase64}" width="100px" height="100px">
+                            </a>
+                            <p><b>Date:</b> ${dateTaken ? dateTaken.description : "Date not found"}</p>
+                        </div>
+                    `;
 
-                        const imgBase64 = arrayBufferToBase64(event.target.result);
-                        const popupContent = `
-                            <div>
-                                <a href="data:image/jpeg;base64,${imgBase64}" target="_blank">
-                                    <img src="data:image/jpeg;base64,${imgBase64}" width="100px" height="100px">
-                                </a>
-                                <p><b>Date:</b> ${dateTaken ? dateTaken.description : "Date not found"}</p>
-                            </div>
-                        `;
+                    const marker = L.marker([lat, lon]).bindPopup(popupContent);
+                    photoMarkers.push(marker); // Marker'ı diziye ekle
+                };
 
-                        L.marker([lat, lon]).addTo(map).bindPopup(popupContent);
-                    };
-
-                    reader.readAsArrayBuffer(blob);
-                })
-                .catch(error => console.error('Fotoğraf yükleme hatası:', error));
+                reader.readAsArrayBuffer(blob);
+            })
+            .catch(error => console.error('Fotoğraf yükleme hatası:', error));
         });
 
         // Başlangıçta koordinatların ortalamasını al
@@ -277,7 +300,8 @@
                     }
 
                     vehicle.marker.setLatLng([newLat, newLng]);
-                    map.setView([newLat, newLng], map.getZoom());
+                    // Harita merkezi değiştirilmeyecek
+                    // map.setView([newLat, newLng], map.getZoom());  // Bu satırı kaldırıyoruz
                 })
                 .catch(error => console.error('Araç konumunu güncelleme hatası:', error));
         }
@@ -343,6 +367,38 @@
             if (vehicle && vehicle.marker) {
                 vehicle.marker.openPopup();
             }
+        }
+
+        // Katman menüsünü açma ve kapatma fonksiyonu
+        function toggleSubmenu(submenuId) {
+            const submenu = document.getElementById(submenuId);
+            if (submenu.style.display === "block") {
+                submenu.style.display = "none";
+            } else {
+                submenu.style.display = "block";
+            }
+        }
+
+        // Araç ikonlarını açma ve kapatma fonksiyonu
+        function toggleVehicles() {
+            Object.values(vehicles).forEach(vehicle => {
+                if (document.getElementById('vehicleToggle').checked) {
+                    vehicle.marker.addTo(map);
+                } else {
+                    map.removeLayer(vehicle.marker);
+                }
+            });
+        }
+
+        // Fotoğraf marker'larını açma ve kapatma fonksiyonu
+        function toggleMarkers() {
+            photoMarkers.forEach(marker => {
+                if (document.getElementById('markerToggle').checked) {
+                    marker.addTo(map);
+                } else {
+                    map.removeLayer(marker);
+                }
+            });
         }
     </script>
 </body>
