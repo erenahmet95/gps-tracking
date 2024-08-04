@@ -1,83 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dynamic Multi-Vehicle Tracking Map</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         #map {
             height: 600px;
             width: 100%;
-            margin-top: 60px;
-            position: relative;
-            z-index: 0;
-            background-color: #f3f3f3;
         }
 
-        #vehicleMenu {
+        #vehicleButtons {
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            background-color: #333;
-            color: white;
-            padding: 10px 20px;
-            display: flex;
-            justify-content: flex-start;
-            align-items: center;
+            top: 10px;
+            right: 10px;
             z-index: 1000;
-        }
-
-        #vehicleList {
-            list-style-type: none;
-            margin: 0;
-            padding: 0;
             display: flex;
+            flex-direction: column;
         }
 
-        #vehicleList li {
-            position: relative;
-            margin-right: 20px;
-            cursor: pointer;
-        }
-
-        #vehicleList li:hover .dropdownMenu {
-            display: block;
-        }
-
-        .dropdownMenu {
-            display: none;
-            position: absolute;
-            top: 100%;
-            left: 0;
-            background-color: #444;
-            padding: 10px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-        }
-
-        .dropdownMenu button {
-            background-color: #28a745;
+        .vehicleButton {
             color: white;
             border: none;
-            padding: 10px;
+            padding: 10px 20px;
             border-radius: 5px;
             cursor: pointer;
-            margin-bottom: 5px;
-            display: block;
+            margin-bottom: 10px;
+            display: inline-block;
+            font-size: 14px;
             width: 150px;
         }
 
-        .dropdownMenu button:hover {
-            background-color: #218838;
+        .vehicle1Button {
+            background: #FF5733; /* Red for Vehicle 1 */
+        }
+
+        .vehicle2Button {
+            background: #33B5FF; /* Blue for Vehicle 2 */
+        }
+
+        .infoButton {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            width: 100%;
+            margin-top: 5px;
         }
 
         .togglePath {
@@ -99,20 +70,6 @@
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
             max-width: 200px;
         }
-
-        .vehicleButton {
-            background-color: #FF5733;
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-right: 10px;
-        }
-
-        .vehicleButton:hover {
-            background-color: #e74c3c;
-        }
     </style>
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
@@ -129,29 +86,18 @@
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="https://erenahmet95.github.io/gps-tracking/favicon.ico">
 </head>
-
 <body>
-    <!-- Araçlar için genel menü -->
-    <div id="vehicleMenu">
-        <h1 style="margin: 0; font-size: 18px;">Dynamic Multi-Vehicle Tracking Map</h1>
-        <ul id="vehicleList">
-            <li>
-                Araçlar
-                <div class="dropdownMenu">
-                    <div>
-                        Araç 1
-                        <button onclick="showVehiclePopup('Arac1')">Mesafe Bilgileri</button>
-                    </div>
-                    <div>
-                        Araç 2
-                        <button onclick="showVehiclePopup('Arac2')">Mesafe Bilgileri</button>
-                    </div>
-                </div>
-            </li>
-        </ul>
-    </div>
-
+    <h1>Dynamic Multi-Vehicle Tracking Map</h1>
     <div id="map"></div>
+
+    <!-- Araç Butonları -->
+    <div id="vehicleButtons">
+        <button class="vehicleButton vehicle1Button" onclick="selectVehicle(1)">Araç 1</button>
+        <button class="infoButton" onclick="showVehiclePopup(1)">Mesafe Bilgileri</button>
+        
+        <button class="vehicleButton vehicle2Button" onclick="selectVehicle(2)">Araç 2</button>
+        <button class="infoButton" onclick="showVehiclePopup(2)">Mesafe Bilgileri</button>
+    </div>
 
     <script>
         // Haritayı başlatma - Belirtilen koordinatlara ve zoom seviyesine ayarla
@@ -173,7 +119,7 @@
 
         // Araçlar için veriler
         const vehicles = {
-            Arac1: {
+            1: {
                 name: "Araç 1",
                 apiUrl: 'https://gps-tracking-i0pv.onrender.com/api/vehicle-location',
                 iconUrl: 'https://erenahmet95.github.io/gps-tracking/icon.png',
@@ -184,7 +130,7 @@
                 startTime: new Date(), // Başlangıç zamanı burada ayarlanır
                 totalDistance: 0
             },
-            Arac2: {
+            2: {
                 name: "Araç 2",
                 apiUrl: 'https://gps-tracking-i0pv.onrender.com/api/vehicle-location', // API adresi değişebilir
                 iconUrl: 'https://erenahmet95.github.io/gps-tracking/icon.png',
@@ -197,7 +143,7 @@
             }
         };
 
-        let currentVehicle = vehicles['Arac1']; // Varsayılan araç
+        let currentVehicle = vehicles[1]; // Varsayılan araç
 
         // Fotoğraf dosyalarını işleme
         const serverURL = 'https://erenahmet95.github.io/gps-tracking';
@@ -376,7 +322,7 @@
 
         // Güzergahı Gizle/Göster fonksiyonu
         function togglePath(vehicleName) {
-            const vehicle = vehicles[vehicleName];
+            const vehicle = Object.values(vehicles).find(v => v.name === vehicleName);
             if (!vehicle) return;
 
             vehicle.pathVisible = !vehicle.pathVisible;
@@ -394,13 +340,12 @@
         }
 
         // Mesafe Bilgileri Gösterme fonksiyonu
-        function showVehiclePopup(vehicleName) {
-            const vehicle = vehicles[vehicleName];
+        function showVehiclePopup(vehicleId) {
+            const vehicle = vehicles[vehicleId];
             if (vehicle && vehicle.marker) {
                 vehicle.marker.openPopup();
             }
         }
     </script>
 </body>
-
 </html>
