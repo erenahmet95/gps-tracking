@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynamic Multi-Vehicle Tracking Map with Ruler</title>
+    <title>Dynamic Multi-Vehicle Tracking Map</title>
     <style>
         /* Genel sayfa ve harita stili */
         body {
@@ -67,19 +67,19 @@
         }
     </style>
     <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
+    <!-- Leaflet Ruler CSS -->
+    <link rel="stylesheet" href="https://rawcdn.githack.com/gokertanrisever/leaflet-ruler/gh-pages/src/leaflet-ruler.css" />
     <!-- Leaflet JavaScript -->
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet@1.0.0/dist/leaflet.js"></script>
+    <!-- Leaflet Ruler JavaScript -->
+    <script src="https://rawcdn.githack.com/gokertanrisever/leaflet-ruler/gh-pages/src/leaflet-ruler.js"></script>
     <!-- ExifReader.js for reading EXIF data -->
     <script src="https://cdn.jsdelivr.net/npm/exifreader/dist/exif-reader.min.js"></script>
     <!-- Leaflet Measure CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet-measure@3.1.0/dist/leaflet-measure.css" />
     <!-- Leaflet Measure JavaScript -->
     <script src="https://unpkg.com/leaflet-measure@3.1.0/dist/leaflet-measure.js"></script>
-    <!-- Leaflet Ruler CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
-    <!-- Leaflet Ruler JavaScript -->
-    <script src="https://unpkg.com/leaflet@1.0.0/dist/leaflet.js"></script>
     <!-- Photo files list -->
     <script src="photos.js"></script>
     <!-- Favicon -->
@@ -88,7 +88,7 @@
 <body>
     <!-- Başlık -->
     <div id="header">
-        <h1>Dynamic Multi-Vehicle Tracking Map with Ruler</h1>
+        <h1>Dynamic Multi-Vehicle Tracking Map</h1>
     </div>
 
     <!-- Harita -->
@@ -118,7 +118,7 @@
         var map = L.map('map').setView([51.49268579318188, 8.431149492160445], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 18,
-            attribution: 'Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
         // Ölçüm aracını haritaya ekleyin
@@ -131,23 +131,8 @@
             completedColor: '#ff0000'
         }).addTo(map);
 
-        // Cetvel aracını haritaya ekleyin
-        L.control.ruler({
-            position: 'topright',
-            circleMarker: {
-                color: 'red',
-                radius: 2
-            },
-            lineStyle: {
-                color: 'red',
-                dashArray: '1,6'
-            },
-            lengthUnit: {
-                factor: 0.001, // 1 meter === 0.001 kilometers
-                display: 'km',
-                decimal: 2
-            }
-        }).addTo(map);
+        // Ruler kontrolünü haritaya ekleyin
+        L.control.ruler().addTo(map);
 
         // Araçlar için veriler
         const vehicles = {
@@ -223,9 +208,9 @@
                             </div>
                         `;
 
-                        const marker = L.marker([lat, lon]).bindPopup(popupContent);
-                        photoMarkers.push(marker); // Fotoğraf marker'larını diziye ekle
-                        marker.addTo(map); // Fotoğraf marker'larını haritaya ekle
+                        const photoMarker = L.marker([lat, lon]).bindPopup(popupContent);
+                        photoMarkers.push(photoMarker);
+                        photoMarker.addTo(map);
                     };
 
                     reader.readAsArrayBuffer(blob);
@@ -312,8 +297,6 @@
                     }
 
                     vehicle.marker.setLatLng([newLat, newLng]);
-                    // Harita merkezi değiştirilmeyecek
-                    // map.setView([newLat, newLng], map.getZoom());  // Bu satırı kaldırıyoruz
                 })
                 .catch(error => console.error('Araç konumunu güncelleme hatası:', error));
         }
