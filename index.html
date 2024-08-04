@@ -18,7 +18,6 @@
         }
 
         .vehicleButton {
-            background: #007bff;
             color: white;
             border: none;
             padding: 10px 20px;
@@ -29,25 +28,16 @@
             font-size: 14px;
         }
 
-        #info {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: white;
-            padding: 10px;
-            border-radius: 5px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-            z-index: 1000;
-            display: none;
+        .vehicle1Button {
+            background: #FF5733; /* Red for Vehicle 1 */
         }
 
-        #info p {
-            margin: 5px 0;
-            padding: 5px 0;
+        .vehicle2Button {
+            background: #33B5FF; /* Blue for Vehicle 2 */
         }
 
         .togglePath {
-            margin-top: 10px;
+            margin-top: 5px;
             background: #28a745;
             color: white;
             border: none;
@@ -55,6 +45,15 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 12px;
+            width: 100%;
+        }
+
+        .infoPopup {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            max-width: 200px;
         }
     </style>
     <!-- Leaflet CSS -->
@@ -78,16 +77,8 @@
 
     <!-- Araç Butonları -->
     <div id="vehicleButtons">
-        <button class="vehicleButton" onclick="selectVehicle(1)">Araç 1</button>
-        <button class="vehicleButton" onclick="selectVehicle(2)">Araç 2</button>
-    </div>
-
-    <!-- Tracking Information -->
-    <div id="info">
-        <p><b>Başlangıç Saati:</b> <span id="startTime">-</span></p>
-        <p><b>Güncel Saat:</b> <span id="currentTime">-</span></p>
-        <p><b>Toplam Mesafe:</b> <span id="totalDistance">0</span> m</p>
-        <button class="togglePath" id="togglePath">Güzergahı Gizle/Göster</button>
+        <button class="vehicleButton vehicle1Button" onclick="selectVehicle(1)">Araç 1</button>
+        <button class="vehicleButton vehicle2Button" onclick="selectVehicle(2)">Araç 2</button>
     </div>
 
     <script>
@@ -209,8 +200,18 @@
                 });
 
                 vehicle.marker = L.marker([avgLat, avgLon], { icon: vehicleIcon }).addTo(map);
+
+                const popupContent = `
+                    <div class="infoPopup">
+                        <p><b>${vehicle.name}</b></p>
+                        <p>Başlangıç Saati: ${vehicle.startTime ? vehicle.startTime.toLocaleTimeString() : '-'}</p>
+                        <p>Toplam Mesafe: <span id="distance${vehicle.name}">0</span> m</p>
+                        <button class="togglePath" onclick="togglePath(${vehicle.name})">Güzergahı Gizle/Göster</button>
+                    </div>
+                `;
+                vehicle.marker.bindPopup(popupContent).openPopup();
+
                 vehicle.startTime = new Date();
-                document.getElementById('startTime').textContent = vehicle.startTime.toLocaleTimeString();
             });
 
             map.setView([avgLat, avgLon], 15);
@@ -232,6 +233,7 @@
             fetch(vehicle.apiUrl)
                 .then(response => response.json())
                 .then(data => {
+                    if (!vehicle.marker) return; // Ensure marker is initialized
                     var newLat = data.latitude;
                     var newLng = data.longitude;
 
@@ -240,7 +242,7 @@
                     if (vehicle.path.length > 1) {
                         const distance = calculateDistance(vehicle.path);
                         vehicle.totalDistance += distance;
-                        document.getElementById('totalDistance').textContent = vehicle.totalDistance.toFixed(2);
+                        document.getElementById(`distance${vehicle.name}`).textContent = vehicle.totalDistance.toFixed(2);
 
                         if (vehicle.pathLine) {
                             map.removeLayer(vehicle.pathLine);
@@ -248,9 +250,8 @@
                         vehicle.pathLine = L.polyline(vehicle.path, { color: 'blue' }).addTo(map);
                     }
 
-                    document.getElementById('currentTime').textContent = new Date().toLocaleTimeString();
-
                     vehicle.marker.setLatLng([newLat, newLng]);
+                    vehicle.marker.openPopup();
                     map.setView([newLat, newLng], map.getZoom());
                 })
                 .catch(error => console.error('Araç konumunu güncelleme hatası:', error));
@@ -279,30 +280,22 @@
         // Araç seçim fonksiyonu
         function selectVehicle(vehicleId) {
             currentVehicle = vehicles[vehicleId];
-            document.getElementById('info').style.display = 'block';
-            updateInfoPanel(currentVehicle);
+            currentVehicle.marker.openPopup();
         }
 
-        // Bilgi panelini güncelle
-        function updateInfoPanel(vehicle) {
-            document.getElementById('startTime').textContent = vehicle.startTime.toLocaleTimeString();
-            document.getElementById('totalDistance').textContent = vehicle.totalDistance.toFixed(2);
-        }
-
-        // Güzergahı Gizle/Göster Butonu
-        document.getElementById('togglePath').addEventListener('click', function() {
-            currentVehicle.pathVisible = !currentVehicle.pathVisible;
-            if (currentVehicle.pathVisible) {
-                if (currentVehicle.pathLine) {
-                    map.addLayer(currentVehicle.pathLine);
+        // Güzergahı Gizle/Göster fonksiyonu
+        function togglePath(vehicle) {
+            vehicle.pathVisible = !vehicle.pathVisible;
+            if (vehicle.pathVisible) {
+                if (vehicle.pathLine) {
+                    map.addLayer(vehicle.pathLine);
                 }
             } else {
-                if (currentVehicle.pathLine) {
-                    map.removeLayer(currentVehicle.pathLine);
+                if (vehicle.pathLine) {
+                    map.removeLayer(vehicle.pathLine);
                 }
             }
-        });
-
+        }
     </script>
 </body>
 </html>
