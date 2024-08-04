@@ -1,73 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dynamic Multi-Vehicle Tracking Map</title>
     <style>
-        /* Genel sayfa ve harita stili */
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-        }
-
         #map {
-            height: 80vh;
-            /* Haritanın yüksekliğini sayfa yüksekliğinin %80'i yapıyoruz */
+            height: 600px;
             width: 100%;
         }
 
-        /* Araç ve dokümantasyon kontrol menüsü stili */
-        #menu {
+        .menu {
             position: absolute;
-            top: 100px;
-            /* Haritanın üst kısmına 100px boşluk bırakıyoruz */
-            left: 10px;
-            z-index: 1000;
-            background-color: white;
+            top: 0;
+            left: 0;
+            background: #333;
+            color: #fff;
             padding: 10px;
-            border-radius: 5px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-            max-width: 200px;
+            z-index: 1000;
         }
 
-        #menu h2 {
-            margin-top: 0;
-            font-size: 16px;
-            color: #333;
-        }
-
-        #menu ul {
-            list-style-type: none;
+        .menu ul {
+            list-style: none;
             padding: 0;
         }
 
-        #menu ul li {
+        .menu ul li {
             margin-bottom: 5px;
         }
 
-        .menuItem {
-            cursor: pointer;
-            margin: 5px 0;
-            font-size: 14px;
-            color: #333;
+        .menu ul li a {
+            color: #fff;
+            text-decoration: none;
         }
 
         .submenu {
-            margin-left: 15px;
             display: none;
-            /* Alt menü başlangıçta gizli olacak */
         }
 
-        /* Başlık stili */
-        #header {
-            background-color: #333;
-            color: white;
-            padding: 10px;
-            text-align: center;
-            position: relative;
-            z-index: 1000;
+        .submenu ul {
+            list-style: none;
+            padding-left: 20px;
         }
     </style>
     <!-- Leaflet CSS -->
@@ -85,29 +58,18 @@
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="https://erenahmet95.github.io/gps-tracking/favicon.ico">
 </head>
-
 <body>
-    <!-- Başlık -->
-    <div id="header">
-        <h1>Dynamic Multi-Vehicle Tracking Map</h1>
-    </div>
-
-    <!-- Harita -->
+    <h1>Dynamic Multi-Vehicle Tracking Map</h1>
     <div id="map"></div>
-
-    <!-- Menü -->
-    <div id="menu">
-        <h2>Katman Kontrolü</h2>
+    <div class="menu">
         <ul>
             <li class="menuItem" onclick="toggleSubmenu('baustelleSubmenu')">Baustellefortschritt</li>
             <ul id="baustelleSubmenu" class="submenu">
-                <li>
-                    <input type="checkbox" id="vehicleToggle" onclick="toggleVehicles()"> Araçlar
-                    <ul class="submenu" id="vehiclesSubmenu">
-                        <li><input type="checkbox" id="vehicle1Toggle" onclick="toggleSingleVehicle(1)"> Araç 1</li>
-                        <li><input type="checkbox" id="vehicle2Toggle" onclick="toggleSingleVehicle(2)"> Araç 2</li>
-                    </ul>
-                </li>
+                <li><input type="checkbox" id="vehicleToggle" onclick="toggleVehicles()"> Araçlar</li>
+                <ul id="vehicleSubmenu" class="submenu">
+                    <li><input type="checkbox" id="vehicle1Toggle" onclick="toggleSingleVehicle(1)"> Araç 1</li>
+                    <li><input type="checkbox" id="vehicle2Toggle" onclick="toggleSingleVehicle(2)"> Araç 2</li>
+                </ul>
             </ul>
             <li class="menuItem" onclick="toggleSubmenu('dokumantationSubmenu')">Dokumantation</li>
             <ul id="dokumantationSubmenu" class="submenu">
@@ -133,7 +95,7 @@
         }).addTo(map);
 
         // Ölçüm aracını haritaya ekleyin
-        L.control.measure({
+        var measureControl = new L.Control.Measure({
             primaryLengthUnit: 'meters',
             secondaryLengthUnit: 'kilometers',
             primaryAreaUnit: 'sqmeters',
@@ -147,6 +109,11 @@
                 closeButton: true
             }
         }).addTo(map);
+
+        // Tıklama olayını dinleyerek hareket kontrolü sağlama
+        map.on('click', function(e) {
+            console.log("Haritada tıklanan yer:", e.latlng);
+        });
 
         // Araçlar için veriler
         const vehicles = {
@@ -261,7 +228,10 @@
                     </div>
                 `;
                 vehicle.marker.bindPopup(popupContent);
-                vehicle.marker.addTo(map); // Marker'ı haritaya ekliyoruz
+
+                if (document.getElementById(`vehicle${vehicleId}Toggle`).checked) {
+                    vehicle.marker.addTo(map);
+                }
             });
 
             map.setView([avgLat, avgLon], 15);
@@ -311,8 +281,7 @@
                     }
 
                     vehicle.marker.setLatLng([newLat, newLng]);
-                    // Harita merkezi değiştirilmeyecek
-                    // map.setView([newLat, newLng], map.getZoom());  // Bu satırı kaldırıyoruz
+                    // Haritayı hareket ettirmeden marker'ı güncelle
                 })
                 .catch(error => console.error('Araç konumunu güncelleme hatası:', error));
         }
@@ -425,7 +394,11 @@
                 }
             });
         }
+
+        // Ölçüm olayını kontrol etme
+        map.on('measurefinish', function(e) {
+            console.log("Ölçüm bitti:", e);
+        });
     </script>
 </body>
-
 </html>
