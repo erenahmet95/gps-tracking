@@ -5,93 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dynamic Multi-Vehicle Tracking Map</title>
     <style>
+        /* Genel sayfa ve harita stili */
         body {
             margin: 0;
             font-family: Arial, sans-serif;
         }
 
         #map {
-            height: 600px;
+            height: 80vh; /* Haritanın yüksekliğini sayfa yüksekliğinin %80'i yapıyoruz */
             width: 100%;
         }
 
+        /* Araç ve dokümantasyon kontrol menüsü stili */
         #menu {
             position: absolute;
-            top: 0;
-            left: 0;
-            background-color: #333;
-            color: white;
-            padding: 10px;
-            width: 200px;
-            height: 100vh;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.3);
+            top: 100px; /* Haritanın üst kısmına 100px boşluk bırakıyoruz */
+            left: 10px;
             z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            justify-content: start;
-        }
-
-        .menuTitle {
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
-
-        .vehicleSection {
-            margin-bottom: 20px;
-        }
-
-        .vehicleButton {
-            background-color: #444;
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-bottom: 10px;
-            width: 100%;
-            text-align: left;
-        }
-
-        .infoButton {
-            background: #28a745;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 12px;
-            width: calc(100% - 20px);
-            margin: 5px 10px;
-            text-align: center;
-        }
-
-        .togglePath {
-            margin-top: 5px;
-            background: #ffc107;
-            color: black;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 12px;
-            width: calc(100% - 20px);
-            margin: 5px 10px;
-            text-align: center;
-        }
-
-        .infoPopup {
-            background: white;
+            background-color: white;
             padding: 10px;
             border-radius: 5px;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
             max-width: 200px;
         }
 
-        #mapContainer {
-            margin-left: 200px; /* Align map next to menu */
+        #menu h2 {
+            margin-top: 0;
+            font-size: 16px;
+            color: #333;
         }
 
+        #menu ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #menu ul li {
+            margin-bottom: 5px;
+        }
+
+        .menuItem {
+            cursor: pointer;
+            margin: 5px 0;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .submenu {
+            margin-left: 15px;
+            display: none; /* Alt menü başlangıçta gizli olacak */
+        }
+
+        /* Başlık stili */
+        #header {
+            background-color: #333;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            position: relative;
+            z-index: 1000;
+        }
     </style>
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
@@ -109,22 +82,27 @@
     <link rel="icon" type="image/x-icon" href="https://erenahmet95.github.io/gps-tracking/favicon.ico">
 </head>
 <body>
-    <!-- Araçlar Menüsü -->
-    <div id="menu">
-        <div class="menuTitle">Araçlar</div>
-        <div class="vehicleSection" id="vehicle1Section">
-            <button class="vehicleButton" onclick="selectVehicle(1)">Araç 1</button>
-            <button class="infoButton" onclick="showVehiclePopup(1)">Mesafe Bilgileri</button>
-        </div>
-        <div class="vehicleSection" id="vehicle2Section">
-            <button class="vehicleButton" onclick="selectVehicle(2)">Araç 2</button>
-            <button class="infoButton" onclick="showVehiclePopup(2)">Mesafe Bilgileri</button>
-        </div>
+    <!-- Başlık -->
+    <div id="header">
+        <h1>Dynamic Multi-Vehicle Tracking Map</h1>
     </div>
 
-    <!-- Harita Konteyneri -->
-    <div id="mapContainer">
-        <div id="map"></div>
+    <!-- Harita -->
+    <div id="map"></div>
+
+    <!-- Menü -->
+    <div id="menu">
+        <h2>Katman Kontrolü</h2>
+        <ul>
+            <li class="menuItem" onclick="toggleSubmenu('baustelleSubmenu')">Baustellefortschritt</li>
+            <ul id="baustelleSubmenu" class="submenu">
+                <li><input type="checkbox" id="vehicleToggle" onclick="toggleVehicles()"> Araçlar</li>
+            </ul>
+            <li class="menuItem" onclick="toggleSubmenu('dokumantationSubmenu')">Dokumantation</li>
+            <ul id="dokumantationSubmenu" class="submenu">
+                <li><input type="checkbox" id="markerToggle" onclick="toggleMarkers()"> Fotoğraflar</li>
+            </ul>
+        </ul>
     </div>
 
     <script>
@@ -178,6 +156,7 @@
         let totalLat = 0;
         let totalLon = 0;
         let count = 0;
+        let photoMarkers = []; // Fotoğraf marker'larını tutmak için dizi
 
         photoFiles.forEach(photoFile => {
             const imagePath = `${serverURL}/${photoFile}`;
@@ -218,7 +197,8 @@
                             </div>
                         `;
 
-                        L.marker([lat, lon]).addTo(map).bindPopup(popupContent);
+                        const marker = L.marker([lat, lon]).addTo(map).bindPopup(popupContent);
+                        photoMarkers.push(marker); // Marker'ı diziye ekle
                     };
 
                     reader.readAsArrayBuffer(blob);
@@ -357,12 +337,10 @@
             if (vehicle.pathVisible) {
                 if (vehicle.pathLine) {
                     map.addLayer(vehicle.pathLine);
-                    console.log(`${vehicle.name} güzergahı gösteriliyor.`);
                 }
             } else {
                 if (vehicle.pathLine) {
                     map.removeLayer(vehicle.pathLine);
-                    console.log(`${vehicle.name} güzergahı gizlendi.`);
                 }
             }
         }
@@ -373,6 +351,38 @@
             if (vehicle && vehicle.marker) {
                 vehicle.marker.openPopup();
             }
+        }
+
+        // Katman menüsünü açma ve kapatma fonksiyonu
+        function toggleSubmenu(submenuId) {
+            const submenu = document.getElementById(submenuId);
+            if (submenu.style.display === "block") {
+                submenu.style.display = "none";
+            } else {
+                submenu.style.display = "block";
+            }
+        }
+
+        // Araç ikonlarını açma ve kapatma fonksiyonu
+        function toggleVehicles() {
+            Object.values(vehicles).forEach(vehicle => {
+                if (document.getElementById('vehicleToggle').checked) {
+                    vehicle.marker.addTo(map);
+                } else {
+                    map.removeLayer(vehicle.marker);
+                }
+            });
+        }
+
+        // Fotoğraf marker'larını açma ve kapatma fonksiyonu
+        function toggleMarkers() {
+            photoMarkers.forEach(marker => {
+                if (document.getElementById('markerToggle').checked) {
+                    marker.addTo(map);
+                } else {
+                    map.removeLayer(marker);
+                }
+            });
         }
     </script>
 </body>
