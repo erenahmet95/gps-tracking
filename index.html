@@ -15,6 +15,8 @@
             top: 10px;
             right: 10px;
             z-index: 1000;
+            display: flex;
+            flex-direction: column;
         }
 
         .vehicleButton {
@@ -24,8 +26,9 @@
             border-radius: 5px;
             cursor: pointer;
             margin-bottom: 10px;
-            display: block;
+            display: inline-block;
             font-size: 14px;
+            width: 150px;
         }
 
         .vehicle1Button {
@@ -36,10 +39,22 @@
             background: #33B5FF; /* Blue for Vehicle 2 */
         }
 
-        .togglePath {
-            margin-top: 5px;
+        .infoButton {
             background: #28a745;
             color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            width: 100%;
+            margin-top: 5px;
+        }
+
+        .togglePath {
+            margin-top: 5px;
+            background: #ffc107;
+            color: black;
             border: none;
             padding: 5px 10px;
             border-radius: 5px;
@@ -78,7 +93,10 @@
     <!-- Araç Butonları -->
     <div id="vehicleButtons">
         <button class="vehicleButton vehicle1Button" onclick="selectVehicle(1)">Araç 1</button>
+        <button class="infoButton" onclick="showVehiclePopup(1)">Mesafe Bilgileri</button>
+        
         <button class="vehicleButton vehicle2Button" onclick="selectVehicle(2)">Araç 2</button>
+        <button class="infoButton" onclick="showVehiclePopup(2)">Mesafe Bilgileri</button>
     </div>
 
     <script>
@@ -209,7 +227,7 @@
                         <button class="togglePath" onclick="togglePath('${vehicle.name}')">Güzergahı Gizle/Göster</button>
                     </div>
                 `;
-                vehicle.marker.bindPopup(popupContent).openPopup();
+                vehicle.marker.bindPopup(popupContent);
             });
 
             map.setView([avgLat, avgLon], 15);
@@ -259,7 +277,6 @@
                     }
 
                     vehicle.marker.setLatLng([newLat, newLng]);
-                    vehicle.marker.openPopup();
                     map.setView([newLat, newLng], map.getZoom());
                 })
                 .catch(error => console.error('Araç konumunu güncelleme hatası:', error));
@@ -301,7 +318,6 @@
         // Araç seçim fonksiyonu
         function selectVehicle(vehicleId) {
             currentVehicle = vehicles[vehicleId];
-            currentVehicle.marker.openPopup();
         }
 
         // Güzergahı Gizle/Göster fonksiyonu
@@ -318,6 +334,14 @@
                 if (vehicle.pathLine) {
                     map.removeLayer(vehicle.pathLine);
                 }
+            }
+        }
+
+        // Mesafe Bilgileri Gösterme fonksiyonu
+        function showVehiclePopup(vehicleId) {
+            const vehicle = vehicles[vehicleId];
+            if (vehicle && vehicle.marker) {
+                vehicle.marker.openPopup();
             }
         }
     </script>
