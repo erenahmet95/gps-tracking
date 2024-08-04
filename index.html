@@ -238,6 +238,7 @@
                 vehicle.marker.bindPopup(popupContent);
             });
 
+            // Haritanın başlangıç konumunu ayarla (ortadaki konum)
             map.setView([avgLat, avgLon], 15);
         }
 
@@ -285,7 +286,8 @@
                     }
 
                     vehicle.marker.setLatLng([newLat, newLng]);
-                    map.setView([newLat, newLng], map.getZoom());
+                    // Harita merkezi değiştirilmeyecek
+                    // map.setView([newLat, newLng], map.getZoom());  // Bu satırı kaldırıyoruz
                 })
                 .catch(error => console.error('Araç konumunu güncelleme hatası:', error));
         }
