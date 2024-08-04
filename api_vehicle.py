@@ -14,6 +14,9 @@ NC_PASS = "A+b=123456789"
 TARGET_DIR = "Projekte/WestNetz/Rüthen-Upgrade/99_sonstiges/Baustelle Fotos und Videos/59602 Rüthen"
 OUTPUT_JS_PATH = "static/photos.js"  # static dizinine kaydet
 
+# Static klasörünü oluştur
+os.makedirs('static', exist_ok=True)
+
 # Nextcloud istemcisi oluşturma
 nc = nc_py_api.Nextcloud(nextcloud_url=NC_URL, nc_auth_user=NC_USER, nc_auth_pass=NC_PASS)
 
