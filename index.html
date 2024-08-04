@@ -244,11 +244,165 @@
                 vehicle.marker.bindPopup(popupContent);
             });
 
-            // Haritanın başlangıç konumunu ayarla (ortadaki konum)
             map.setView([avgLat, avgLon], 15);
         }
 
         // ArrayBuffer'ı Base64'e dönüştürme fonksiyonu
         function arrayBufferToBase64(buffer) {
             let binary = '';
-           
+            const bytes = new Uint8Array(buffer);
+            const len = bytes.byteLength;
+            for (let i = 0; i < len; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return window.btoa(binary);
+        }
+
+        // Dinamik araç konumunu güncelleme fonksiyonu
+        function updateVehicleLocation(vehicle) {
+            fetch(vehicle.apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (!vehicle.marker) return; // Ensure marker is initialized
+                    var newLat = data.latitude;
+                    var newLng = data.longitude;
+
+                    vehicle.path.push([newLat, newLng]);
+
+                    console.log(`New position for ${vehicle.name}: [${newLat}, ${newLng}]`);
+                    console.log(`Current path for ${vehicle.name}: `, vehicle.path);
+
+                    if (vehicle.path.length > 1) {
+                        const distance = calculateDistance(vehicle.path);
+                        vehicle.totalDistance += distance;
+                        console.log(`New distance for ${vehicle.name}: ${distance.toFixed(2)} m`);
+                        console.log(`Total distance for ${vehicle.name}: ${vehicle.totalDistance.toFixed(2)} m`);
+
+                        // Update the popup content
+                        updateVehiclePopup(vehicle);
+
+                        // Sadece güzergah görünürse çizgiyi haritaya ekle
+                        if (vehicle.pathVisible) {
+                            if (vehicle.pathLine) {
+                                map.removeLayer(vehicle.pathLine);
+                            }
+                            vehicle.pathLine = L.polyline(vehicle.path, { color: 'blue' }).addTo(map);
+                        }
+                    }
+
+                    vehicle.marker.setLatLng([newLat, newLng]);
+                    // Harita merkezi değiştirilmeyecek
+                    // map.setView([newLat, newLng], map.getZoom());  // Bu satırı kaldırıyoruz
+                })
+                .catch(error => console.error('Araç konumunu güncelleme hatası:', error));
+        }
+
+        // Araç pop-up'ını güncelleme fonksiyonu
+        function updateVehiclePopup(vehicle) {
+            const popupContent = `
+                <div class="infoPopup">
+                    <p><b>${vehicle.name}</b></p>
+                    <p>Başlangıç Saati: ${vehicle.startTime.toLocaleTimeString()}</p>
+                    <p>Toplam Mesafe: <span id="distance${vehicle.name.replace(/\s+/g, '')}">${vehicle.totalDistance.toFixed(2)}</span> m</p>
+                    <button class="togglePath" onclick="togglePath('${vehicle.name}')">Güzergahı Gizle/Göster</button>
+                </div>
+            `;
+            vehicle.marker.bindPopup(popupContent);
+        }
+
+        // Mesafeyi hesaplama fonksiyonu
+        function calculateDistance(path) {
+            let distance = 0;
+            for (let i = 1; i < path.length; i++) {
+                distance += map.distance(path[i - 1], path[i]);
+            }
+            return distance;
+        }
+
+        // Konumu güncelle ve her 5 saniyede bir güncelle
+        function startTracking() {
+            setInterval(() => {
+                Object.values(vehicles).forEach(vehicle => {
+                    updateVehicleLocation(vehicle);
+                });
+            }, 5000);
+        }
+
+        startTracking();
+
+        // Araç seçim fonksiyonu
+        function selectVehicle(vehicleId) {
+            currentVehicle = vehicles[vehicleId];
+        }
+
+        // Güzergahı Gizle/Göster fonksiyonu
+        function togglePath(vehicleName) {
+            const vehicle = Object.values(vehicles).find(v => v.name === vehicleName);
+            if (!vehicle) return;
+
+            vehicle.pathVisible = !vehicle.pathVisible;
+            if (vehicle.pathVisible) {
+                if (vehicle.pathLine) {
+                    map.addLayer(vehicle.pathLine);
+                }
+            } else {
+                if (vehicle.pathLine) {
+                    map.removeLayer(vehicle.pathLine);
+                }
+            }
+        }
+
+        // Mesafe Bilgileri Gösterme fonksiyonu
+        function showVehiclePopup(vehicleId) {
+            const vehicle = vehicles[vehicleId];
+            if (vehicle && vehicle.marker) {
+                vehicle.marker.openPopup();
+            }
+        }
+
+        // Katman menüsünü açma ve kapatma fonksiyonu
+        function toggleSubmenu(submenuId) {
+            const submenu = document.getElementById(submenuId);
+            if (submenu.style.display === "block") {
+                submenu.style.display = "none";
+            } else {
+                submenu.style.display = "block";
+            }
+        }
+
+        // Araç ikonlarını açma ve kapatma fonksiyonu
+        function toggleVehicles() {
+            Object.values(vehicles).forEach(vehicle => {
+                if (document.getElementById('vehicleToggle').checked) {
+                    vehicle.marker.addTo(map);
+                } else {
+                    map.removeLayer(vehicle.marker);
+                }
+            });
+        }
+
+        // Belirli bir aracın ikonunu açma ve kapatma fonksiyonu
+        function toggleSingleVehicle(vehicleId) {
+            const vehicle = vehicles[vehicleId];
+            if (!vehicle) return;
+
+            if (document.getElementById(`vehicle${vehicleId}Toggle`).checked) {
+                vehicle.marker.addTo(map);
+            } else {
+                map.removeLayer(vehicle.marker);
+            }
+        }
+
+        // Fotoğraf marker'larını açma ve kapatma fonksiyonu
+        function toggleMarkers() {
+            photoMarkers.forEach(marker => {
+                if (document.getElementById('markerToggle').checked) {
+                    marker.addTo(map);
+                } else {
+                    map.removeLayer(marker);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
