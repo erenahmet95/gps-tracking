@@ -7,26 +7,30 @@
     <style>
         body {
             font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         #map {
             height: 600px;
             width: 100%;
-            margin-top: 50px; /* Menü için boşluk bırakma */
+            margin-top: 60px; /* Menü için boşluk bırakma */
         }
 
         /* Araç menüsü stil ayarları */
         #vehicleMenu {
-            position: fixed;
+            position: absolute;
             top: 0;
             left: 0;
             right: 0;
             background-color: #333;
             color: white;
-            padding: 10px;
+            padding: 10px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            z-index: 1000; /* Haritanın üzerinde görünmesi için */
         }
 
         #vehicleList {
@@ -38,7 +42,7 @@
 
         #vehicleList li {
             position: relative;
-            margin-right: 15px;
+            margin-right: 20px;
             cursor: pointer;
         }
 
@@ -125,7 +129,7 @@
 <body>
     <!-- Araçlar için genel menü -->
     <div id="vehicleMenu">
-        <h1>Dynamic Multi-Vehicle Tracking Map</h1>
+        <h1 style="margin: 0; font-size: 18px;">Dynamic Multi-Vehicle Tracking Map</h1>
         <ul id="vehicleList">
             <li>
                 Araç 1
@@ -385,13 +389,4 @@
         }
 
         // Mesafe Bilgileri Gösterme fonksiyonu
-        function showVehiclePopup(vehicleId) {
-            const vehicle = vehicles[vehicleId];
-            if (vehicle && vehicle.marker) {
-                vehicle.marker.openPopup();
-            }
-        }
-    </script>
-</body>
-</html>
-<
+        function showVehiclePopup
