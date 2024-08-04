@@ -9,6 +9,36 @@
             height: 600px;
             width: 100%;
         }
+
+        #info {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
+
+        #info p {
+            margin: 0;
+            padding: 5px 0;
+        }
+
+        #toggleTracking {
+            position: absolute;
+            top: 50px;
+            right: 10px;
+            z-index: 1000;
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
     </style>
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
@@ -28,6 +58,16 @@
 <body>
     <h1>Dynamic Photo and Vehicle Map</h1>
     <div id="map"></div>
+
+    <!-- Tracking Information -->
+    <div id="info" style="display: none;">
+        <p><b>Başlangıç Saati:</b> <span id="startTime">-</span></p>
+        <p><b>Güncel Saat:</b> <span id="currentTime">-</span></p>
+        <p><b>Toplam Mesafe:</b> <span id="totalDistance">0</span> m</p>
+    </div>
+
+    <!-- Tracking Toggle Button -->
+    <button id="toggleTracking">Takip Et</button>
 
     <script>
         // Haritayı başlatma - Belirtilen koordinatlara ve zoom seviyesine ayarla
@@ -136,6 +176,11 @@
             popupAnchor: [0, -50]  // Popup'un ikon konumuna göre açılma noktası
         });
 
+        let vehiclePath = [];
+        let pathLine = null;
+        let startTime = null;
+        let trackingEnabled = false;
+
         // Başlangıçta koordinatların ortalamasını al
         setTimeout(() => {
             if (count > 0) {
@@ -148,6 +193,10 @@
 
                 // Haritayı ortalama konuma odakla
                 map.setView([avgLat, avgLon], 15);
+
+                // Başlangıç zamanını kaydet
+                startTime = new Date();
+                document.getElementById('startTime').textContent = startTime.toLocaleTimeString();
             }
         }, 1000); // Fotoğrafların yüklenmesi için zaman tanıyın
 
@@ -169,11 +218,41 @@
                 .then(data => {
                     var newLat = data.latitude;
                     var newLng = data.longitude;
+
+                    if (trackingEnabled) {
+                        // Yol hattına yeni konumu ekleyin
+                        vehiclePath.push([newLat, newLng]);
+
+                        // Toplam mesafeyi hesaplayın
+                        if (vehiclePath.length > 1) {
+                            const distance = calculateDistance(vehiclePath);
+                            document.getElementById('totalDistance').textContent = distance.toFixed(2);
+
+                            // Yol hattını güncelleyin
+                            if (pathLine) {
+                                map.removeLayer(pathLine);
+                            }
+                            pathLine = L.polyline(vehiclePath, { color: 'blue' }).addTo(map);
+                        }
+
+                        // Güncel saat
+                        document.getElementById('currentTime').textContent = new Date().toLocaleTimeString();
+                    }
+
                     vehicleMarker.setLatLng([newLat, newLng]);
                     map.setView([newLat, newLng], map.getZoom());  // Haritayı güncel konuma odakla
                     console.log("Updated vehicle position:", newLat, newLng); // Konsola yeni konumu yazdır
                 })
                 .catch(error => console.error('Araç konumunu güncelleme hatası:', error));
+        }
+
+        // Mesafeyi hesaplama fonksiyonu
+        function calculateDistance(path) {
+            let distance = 0;
+            for (let i = 1; i < path.length; i++) {
+                distance += map.distance(path[i - 1], path[i]);  // Mesafeyi metre cinsinden ekleyin
+            }
+            return distance;  // Toplam mesafeyi döndürün
         }
 
         // Konumu güncelle ve her 5 saniyede bir güncelle
@@ -184,6 +263,24 @@
             }
         }, 2000); // Araç marker'ı oluşturulduktan sonra konumu güncellemeye başla
 
+        // Takip etme butonu
+        document.getElementById('toggleTracking').addEventListener('click', function() {
+            trackingEnabled = !trackingEnabled;
+            if (trackingEnabled) {
+                this.textContent = 'Takibi Durdur';
+                document.getElementById('info').style.display = 'block';  // Bilgi kutusunu göster
+                vehiclePath = [];  // Yol hattını sıfırla
+                if (pathLine) {
+                    map.removeLayer(pathLine);  // Önceki çizgiyi kaldır
+                }
+            } else {
+                this.textContent = 'Takip Et';
+                document.getElementById('info').style.display = 'none';  // Bilgi kutusunu gizle
+                if (pathLine) {
+                    map.removeLayer(pathLine);  // Çizgiyi kaldır
+                }
+            }
+        });
     </script>
 </body>
 </html>
