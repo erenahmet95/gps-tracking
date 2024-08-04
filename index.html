@@ -26,7 +26,7 @@
             padding: 10px;
             border-radius: 5px;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-            max-width: 250px;
+            max-width: 200px;
         }
 
         #menu h2 {
@@ -68,18 +68,20 @@
     </style>
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
-    <!-- Leaflet Ruler CSS -->
-    <link rel="stylesheet" href="https://rawcdn.githack.com/gokertanrisever/leaflet-ruler/gh-pages/src/leaflet-ruler.css" />
-    <!-- Leaflet JavaScript -->
-    <script src="https://unpkg.com/leaflet@1.0.0/dist/leaflet.js"></script>
-    <!-- Leaflet Ruler JavaScript -->
-    <script src="https://rawcdn.githack.com/gokertanrisever/leaflet-ruler/gh-pages/src/leaflet-ruler.js"></script>
-    <!-- ExifReader.js for reading EXIF data -->
-    <script src="https://cdn.jsdelivr.net/npm/exifreader/dist/exif-reader.min.js"></script>
     <!-- Leaflet Measure CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet-measure@3.1.0/dist/leaflet-measure.css" />
+    <!-- Leaflet Ruler CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/gokertanrisever/leaflet-ruler@master/src/leaflet-ruler.css" />
+    
+    <!-- Leaflet JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.0.0/dist/leaflet.js"></script>
     <!-- Leaflet Measure JavaScript -->
     <script src="https://unpkg.com/leaflet-measure@3.1.0/dist/leaflet-measure.js"></script>
+    <!-- Leaflet Ruler JavaScript -->
+    <script src="https://cdn.jsdelivr.net/gh/gokertanrisever/leaflet-ruler@master/src/leaflet-ruler.js"></script>
+    
+    <!-- ExifReader.js for reading EXIF data -->
+    <script src="https://cdn.jsdelivr.net/npm/exifreader/dist/exif-reader.min.js"></script>
     <!-- Photo files list -->
     <script src="photos.js"></script>
     <!-- Favicon -->
@@ -101,10 +103,6 @@
             <li class="menuItem" onclick="toggleSubmenu('baustelleSubmenu')">Baustellefortschritt</li>
             <ul id="baustelleSubmenu" class="submenu">
                 <li><input type="checkbox" id="vehicleToggle" onclick="toggleVehicles()"> Araçlar</li>
-                <ul id="vehicleList" class="submenu">
-                    <li><input type="checkbox" id="vehicle1Toggle" onclick="toggleVehicle(1)"> Araç 1</li>
-                    <li><input type="checkbox" id="vehicle2Toggle" onclick="toggleVehicle(2)"> Araç 2</li>
-                </ul>
             </ul>
             <li class="menuItem" onclick="toggleSubmenu('dokumantationSubmenu')">Dokumantation</li>
             <ul id="dokumantationSubmenu" class="submenu">
@@ -131,7 +129,7 @@
             completedColor: '#ff0000'
         }).addTo(map);
 
-        // Ruler kontrolünü haritaya ekleyin
+        // Ruler eklentisini haritaya ekleyin
         L.control.ruler().addTo(map);
 
         // Araçlar için veriler
@@ -208,9 +206,8 @@
                             </div>
                         `;
 
-                        const photoMarker = L.marker([lat, lon]).bindPopup(popupContent);
-                        photoMarkers.push(photoMarker);
-                        photoMarker.addTo(map);
+                        const marker = L.marker([lat, lon]).addTo(map).bindPopup(popupContent);
+                        photoMarkers.push(marker); // Marker'ı diziye ekle
                     };
 
                     reader.readAsArrayBuffer(blob);
@@ -297,6 +294,8 @@
                     }
 
                     vehicle.marker.setLatLng([newLat, newLng]);
+                    // Harita merkezi değiştirilmeyecek
+                    // map.setView([newLat, newLng], map.getZoom());  // Bu satırı kaldırıyoruz
                 })
                 .catch(error => console.error('Araç konumunu güncelleme hatası:', error));
         }
@@ -376,36 +375,19 @@
 
         // Araç ikonlarını açma ve kapatma fonksiyonu
         function toggleVehicles() {
-            const vehicleToggle = document.getElementById('vehicleToggle');
             Object.values(vehicles).forEach(vehicle => {
-                if (vehicleToggle.checked) {
+                if (document.getElementById('vehicleToggle').checked) {
                     vehicle.marker.addTo(map);
-                    document.getElementById(`vehicle${vehicle.name.replace(/\s+/g, '')}Toggle`).checked = true;
                 } else {
                     map.removeLayer(vehicle.marker);
-                    document.getElementById(`vehicle${vehicle.name.replace(/\s+/g, '')}Toggle`).checked = false;
                 }
             });
         }
 
-        // Belirli bir aracı açma ve kapatma fonksiyonu
-        function toggleVehicle(vehicleId) {
-            const vehicle = vehicles[vehicleId];
-            if (!vehicle) return;
-
-            const vehicleToggle = document.getElementById(`vehicle${vehicle.name.replace(/\s+/g, '')}Toggle`);
-            if (vehicleToggle.checked) {
-                vehicle.marker.addTo(map);
-            } else {
-                map.removeLayer(vehicle.marker);
-            }
-        }
-
         // Fotoğraf marker'larını açma ve kapatma fonksiyonu
         function toggleMarkers() {
-            const markerToggle = document.getElementById('markerToggle');
             photoMarkers.forEach(marker => {
-                if (markerToggle.checked) {
+                if (document.getElementById('markerToggle').checked) {
                     marker.addTo(map);
                 } else {
                     map.removeLayer(marker);
