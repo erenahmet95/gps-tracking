@@ -169,57 +169,66 @@
         let count = 0;
         let photoMarkers = []; // Fotoğraf marker'larını tutmak için dizi
 
-        photoFiles.forEach(photoFile => {
-            const photoUrl = nextcloudBaseUrl + encodeURIComponent(photoFile);
+        // photos.js dosyasını yükleyin
+        fetch('https://gps-tracking-i0pv.onrender.com/static/photos.js')
+            .then(response => response.text())
+            .then(photosJsContent => {
+                // photoFiles dizisini al
+                const photoFiles = eval(photosJsContent);
 
-            fetch(photoUrl, {
-                headers: {
-                    Authorization: 'Basic ' + btoa('Eren Isik:A+b=123456789') // Nextcloud kimlik doğrulama bilgileri
-                }
+                photoFiles.forEach(photoFile => {
+                    const photoUrl = nextcloudBaseUrl + encodeURIComponent(photoFile);
+
+                    fetch(photoUrl, {
+                        headers: {
+                            Authorization: 'Basic ' + btoa('Eren Isik:A+b=123456789') // Nextcloud kimlik doğrulama bilgileri
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Fotoğraf yükleme hatası: ' + response.statusText);
+                        }
+                        return response.blob();
+                    })
+                    .then(blob => {
+                        const reader = new FileReader();
+                        reader.onload = function (event) {
+                            const tags = ExifReader.load(event.target.result);
+                            const gpsLatitude = tags['GPSLatitude'];
+                            const gpsLongitude = tags['GPSLongitude'];
+                            const dateTaken = tags['DateTimeOriginal'];
+
+                            if (!gpsLatitude || !gpsLongitude) {
+                                return;
+                            }
+
+                            const lat = parseFloat(gpsLatitude.description);
+                            const lon = parseFloat(gpsLongitude.description);
+
+                            totalLat += lat;
+                            totalLon += lon;
+                            count++;
+
+                            const imgBase64 = arrayBufferToBase64(event.target.result);
+                            const popupContent = `
+                                <div>
+                                    <a href="data:image/jpeg;base64,${imgBase64}" target="_blank">
+                                        <img src="data:image/jpeg;base64,${imgBase64}" width="100px" height="100px">
+                                    </a>
+                                    <p><b>Date:</b> ${dateTaken ? dateTaken.description : "Date not found"}</p>
+                                </div>
+                            `;
+
+                            const marker = L.marker([lat, lon]).bindPopup(popupContent);
+                            photoMarkers.push(marker); // Marker'ı diziye ekle
+                        };
+
+                        reader.readAsArrayBuffer(blob);
+                    })
+                    .catch(error => console.error('Fotoğraf yükleme hatası:', error));
+                });
             })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Fotoğraf yükleme hatası: ' + response.statusText);
-                }
-                return response.blob();
-            })
-            .then(blob => {
-                const reader = new FileReader();
-                reader.onload = function (event) {
-                    const tags = ExifReader.load(event.target.result);
-                    const gpsLatitude = tags['GPSLatitude'];
-                    const gpsLongitude = tags['GPSLongitude'];
-                    const dateTaken = tags['DateTimeOriginal'];
-
-                    if (!gpsLatitude || !gpsLongitude) {
-                        return;
-                    }
-
-                    const lat = parseFloat(gpsLatitude.description);
-                    const lon = parseFloat(gpsLongitude.description);
-
-                    totalLat += lat;
-                    totalLon += lon;
-                    count++;
-
-                    const imgBase64 = arrayBufferToBase64(event.target.result);
-                    const popupContent = `
-                        <div>
-                            <a href="data:image/jpeg;base64,${imgBase64}" target="_blank">
-                                <img src="data:image/jpeg;base64,${imgBase64}" width="100px" height="100px">
-                            </a>
-                            <p><b>Date:</b> ${dateTaken ? dateTaken.description : "Date not found"}</p>
-                        </div>
-                    `;
-
-                    const marker = L.marker([lat, lon]).bindPopup(popupContent);
-                    photoMarkers.push(marker); // Marker'ı diziye ekle
-                };
-
-                reader.readAsArrayBuffer(blob);
-            })
-            .catch(error => console.error('Fotoğraf yükleme hatası:', error));
-        });
+            .catch(error => console.error('photos.js yükleme hatası:', error));
 
         // Başlangıçta koordinatların ortalamasını al
         setTimeout(() => {
