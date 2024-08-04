@@ -22,13 +22,13 @@
         }
 
         #info p {
-            margin: 0;
+            margin: 5px 0;
             padding: 5px 0;
         }
 
-        #toggleTracking {
+        #togglePath {
             position: absolute;
-            top: 50px;
+            top: 150px;
             right: 10px;
             z-index: 1000;
             background: #007bff;
@@ -60,14 +60,14 @@
     <div id="map"></div>
 
     <!-- Tracking Information -->
-    <div id="info" style="display: none;">
+    <div id="info">
         <p><b>Başlangıç Saati:</b> <span id="startTime">-</span></p>
         <p><b>Güncel Saat:</b> <span id="currentTime">-</span></p>
         <p><b>Toplam Mesafe:</b> <span id="totalDistance">0</span> m</p>
     </div>
 
-    <!-- Tracking Toggle Button -->
-    <button id="toggleTracking">Takip Et</button>
+    <!-- Toggle Path Button -->
+    <button id="togglePath">Güzergahı Gizle/Göster</button>
 
     <script>
         // Haritayı başlatma - Belirtilen koordinatlara ve zoom seviyesine ayarla
@@ -179,7 +179,8 @@
         let vehiclePath = [];
         let pathLine = null;
         let startTime = null;
-        let trackingEnabled = false;
+        let totalDistance = 0;
+        let pathVisible = true;
 
         // Başlangıçta koordinatların ortalamasını al
         setTimeout(() => {
@@ -219,25 +220,24 @@
                     var newLat = data.latitude;
                     var newLng = data.longitude;
 
-                    if (trackingEnabled) {
-                        // Yol hattına yeni konumu ekleyin
-                        vehiclePath.push([newLat, newLng]);
+                    // Yol hattına yeni konumu ekleyin
+                    vehiclePath.push([newLat, newLng]);
 
-                        // Toplam mesafeyi hesaplayın
-                        if (vehiclePath.length > 1) {
-                            const distance = calculateDistance(vehiclePath);
-                            document.getElementById('totalDistance').textContent = distance.toFixed(2);
+                    // Toplam mesafeyi hesaplayın
+                    if (vehiclePath.length > 1) {
+                        const distance = calculateDistance(vehiclePath);
+                        totalDistance += distance;
+                        document.getElementById('totalDistance').textContent = totalDistance.toFixed(2);
 
-                            // Yol hattını güncelleyin
-                            if (pathLine) {
-                                map.removeLayer(pathLine);
-                            }
-                            pathLine = L.polyline(vehiclePath, { color: 'blue' }).addTo(map);
+                        // Yol hattını güncelleyin
+                        if (pathLine) {
+                            map.removeLayer(pathLine);
                         }
-
-                        // Güncel saat
-                        document.getElementById('currentTime').textContent = new Date().toLocaleTimeString();
+                        pathLine = L.polyline(vehiclePath, { color: 'blue' }).addTo(map);
                     }
+
+                    // Güncel saat
+                    document.getElementById('currentTime').textContent = new Date().toLocaleTimeString();
 
                     vehicleMarker.setLatLng([newLat, newLng]);
                     map.setView([newLat, newLng], map.getZoom());  // Haritayı güncel konuma odakla
@@ -263,24 +263,20 @@
             }
         }, 2000); // Araç marker'ı oluşturulduktan sonra konumu güncellemeye başla
 
-        // Takip etme butonu
-        document.getElementById('toggleTracking').addEventListener('click', function() {
-            trackingEnabled = !trackingEnabled;
-            if (trackingEnabled) {
-                this.textContent = 'Takibi Durdur';
-                document.getElementById('info').style.display = 'block';  // Bilgi kutusunu göster
-                vehiclePath = [];  // Yol hattını sıfırla
+        // Güzergahı Gizle/Göster Butonu
+        document.getElementById('togglePath').addEventListener('click', function() {
+            pathVisible = !pathVisible;
+            if (pathVisible) {
                 if (pathLine) {
-                    map.removeLayer(pathLine);  // Önceki çizgiyi kaldır
+                    map.addLayer(pathLine);  // Çizgiyi göster
                 }
             } else {
-                this.textContent = 'Takip Et';
-                document.getElementById('info').style.display = 'none';  // Bilgi kutusunu gizle
                 if (pathLine) {
-                    map.removeLayer(pathLine);  // Çizgiyi kaldır
+                    map.removeLayer(pathLine);  // Çizgiyi gizle
                 }
             }
         });
+
     </script>
 </body>
 </html>
