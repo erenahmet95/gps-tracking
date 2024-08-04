@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,13 +16,12 @@
         #map {
             height: 600px;
             width: 100%;
-            margin-top: 60px; /* Menü için boşluk bırakma */
+            margin-top: 60px;
             position: relative;
             z-index: 0;
             background-color: #f3f3f3;
         }
 
-        /* Araçlar menüsü stil ayarları */
         #vehicleMenu {
             position: absolute;
             top: 0;
@@ -31,9 +31,9 @@
             color: white;
             padding: 10px 20px;
             display: flex;
-            justify-content: flex-start; /* Sol tarafa hizala */
+            justify-content: flex-start;
             align-items: center;
-            z-index: 1000; /* Haritanın üzerinde görünmesi için */
+            z-index: 1000;
         }
 
         #vehicleList {
@@ -129,6 +129,7 @@
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="https://erenahmet95.github.io/gps-tracking/favicon.ico">
 </head>
+
 <body>
     <!-- Araçlar için genel menü -->
     <div id="vehicleMenu">
@@ -382,10 +383,12 @@
             if (vehicle.pathVisible) {
                 if (vehicle.pathLine) {
                     map.addLayer(vehicle.pathLine);
+                    console.log(`${vehicle.name} güzergahı gösteriliyor.`);
                 }
             } else {
                 if (vehicle.pathLine) {
                     map.removeLayer(vehicle.pathLine);
+                    console.log(`${vehicle.name} güzergahı gizlendi.`);
                 }
             }
         }
@@ -399,4 +402,5 @@
         }
     </script>
 </body>
+
 </html>
