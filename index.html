@@ -249,10 +249,13 @@
                         // Update the popup content
                         updateVehiclePopup(vehicle);
 
-                        if (vehicle.pathLine) {
-                            map.removeLayer(vehicle.pathLine);
+                        // Sadece güzergah görünürse çizgiyi haritaya ekle
+                        if (vehicle.pathVisible) {
+                            if (vehicle.pathLine) {
+                                map.removeLayer(vehicle.pathLine);
+                            }
+                            vehicle.pathLine = L.polyline(vehicle.path, { color: 'blue' }).addTo(map);
                         }
-                        vehicle.pathLine = L.polyline(vehicle.path, { color: 'blue' }).addTo(map);
                     }
 
                     vehicle.marker.setLatLng([newLat, newLng]);
