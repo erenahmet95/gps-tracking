@@ -3,22 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynamic Photo and Vehicle Map</title>
+    <title>Dynamic Multi-Vehicle Tracking Map</title>
     <style>
         #map {
             height: 600px;
             width: 100%;
         }
 
-        #info {
+        #vehicleButtons {
             position: absolute;
             top: 10px;
             right: 10px;
+            z-index: 1000;
+        }
+
+        .vehicleButton {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-bottom: 10px;
+            display: block;
+            font-size: 14px;
+        }
+
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
             background: white;
             padding: 10px;
             border-radius: 5px;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
             z-index: 1000;
+            display: none;
         }
 
         #info p {
@@ -26,18 +46,15 @@
             padding: 5px 0;
         }
 
-        #togglePath {
-            position: absolute;
-            top: 150px;
-            right: 10px;
-            z-index: 1000;
-            background: #007bff;
+        .togglePath {
+            margin-top: 10px;
+            background: #28a745;
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 5px 10px;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 12px;
         }
     </style>
     <!-- Leaflet CSS -->
@@ -56,18 +73,22 @@
     <link rel="icon" type="image/x-icon" href="https://erenahmet95.github.io/gps-tracking/favicon.ico">
 </head>
 <body>
-    <h1>Dynamic Photo and Vehicle Map</h1>
+    <h1>Dynamic Multi-Vehicle Tracking Map</h1>
     <div id="map"></div>
+
+    <!-- Araç Butonları -->
+    <div id="vehicleButtons">
+        <button class="vehicleButton" onclick="selectVehicle(1)">Araç 1</button>
+        <button class="vehicleButton" onclick="selectVehicle(2)">Araç 2</button>
+    </div>
 
     <!-- Tracking Information -->
     <div id="info">
         <p><b>Başlangıç Saati:</b> <span id="startTime">-</span></p>
         <p><b>Güncel Saat:</b> <span id="currentTime">-</span></p>
         <p><b>Toplam Mesafe:</b> <span id="totalDistance">0</span> m</p>
+        <button class="togglePath" id="togglePath">Güzergahı Gizle/Göster</button>
     </div>
-
-    <!-- Toggle Path Button -->
-    <button id="togglePath">Güzergahı Gizle/Göster</button>
 
     <script>
         // Haritayı başlatma - Belirtilen koordinatlara ve zoom seviyesine ayarla
@@ -87,14 +108,40 @@
             completedColor: '#ff0000'
         }).addTo(map);
 
-        // Sunucu URL'si (GitHub Pages veya başka bir yer)
-        const serverURL = 'https://erenahmet95.github.io/gps-tracking';
+        // Araçlar için veriler
+        const vehicles = {
+            1: {
+                name: "Araç 1",
+                apiUrl: 'https://gps-tracking-i0pv.onrender.com/api/vehicle-location',
+                iconUrl: 'https://erenahmet95.github.io/gps-tracking/icon.png',
+                marker: null,
+                path: [],
+                pathLine: null,
+                pathVisible: true,
+                startTime: null,
+                totalDistance: 0
+            },
+            2: {
+                name: "Araç 2",
+                apiUrl: 'https://gps-tracking-i0pv.onrender.com/api/vehicle-location', // API adresi değişebilir
+                iconUrl: 'https://erenahmet95.github.io/gps-tracking/icon.png',
+                marker: null,
+                path: [],
+                pathLine: null,
+                pathVisible: true,
+                startTime: null,
+                totalDistance: 0
+            }
+        };
 
+        let currentVehicle = vehicles[1]; // Varsayılan araç
+
+        // Fotoğraf dosyalarını işleme
+        const serverURL = 'https://erenahmet95.github.io/gps-tracking';
         let totalLat = 0;
         let totalLon = 0;
         let count = 0;
 
-        // Fotoğraf dosyalarını işleme
         photoFiles.forEach(photoFile => {
             const imagePath = `${serverURL}/${photoFile}`;
 
@@ -108,40 +155,23 @@
                 .then(blob => {
                     const reader = new FileReader();
                     reader.onload = function (event) {
-                        // EXIF verilerini okuyalım
                         const tags = ExifReader.load(event.target.result);
-
-                        // EXIF verilerini al
                         const gpsLatitude = tags['GPSLatitude'];
                         const gpsLongitude = tags['GPSLongitude'];
                         const dateTaken = tags['DateTimeOriginal'];
 
-                        // Konsola EXIF verilerini yazdır
-                        console.log(`Fotoğraf: ${photoFile}`);
-                        console.log(`EXIF GPSLatitude: ${gpsLatitude ? gpsLatitude.description : "Bulunamadı"}`);
-                        console.log(`EXIF GPSLongitude: ${gpsLongitude ? gpsLongitude.description : "Bulunamadı"}`);
-                        console.log(`EXIF Date Taken: ${dateTaken ? dateTaken.description : "Bulunamadı"}`);
-
                         if (!gpsLatitude || !gpsLongitude) {
-                            console.log("Koordinatlar bulunamadı.");
                             return;
                         }
 
-                        // Enlem ve boylam değerlerini al
                         const lat = parseFloat(gpsLatitude.description);
                         const lon = parseFloat(gpsLongitude.description);
 
-                        // Koordinatları topla
                         totalLat += lat;
                         totalLon += lon;
                         count++;
 
-                        console.log(`Koordinatlar: Latitude = ${lat}, Longitude = ${lon}`);
-
-                        // Fotoğrafı base64 formatına dönüştür
                         const imgBase64 = arrayBufferToBase64(event.target.result);
-
-                        // Marker ekle ve popup oluştur
                         const popupContent = `
                             <div>
                                 <a href="data:image/jpeg;base64,${imgBase64}" target="_blank">
@@ -151,55 +181,40 @@
                             </div>
                         `;
 
-                        // Fotoğraf marker ekleme
-                        const marker = L.marker([lat, lon]).addTo(map)
-                            .bindPopup(popupContent);
-
-                        // Marker konumlandırma mesajı
-                        console.log(`Marker added at Latitude: ${lat}, Longitude: ${lon}`);
+                        L.marker([lat, lon]).addTo(map).bindPopup(popupContent);
                     };
 
-                    // EXIF için ArrayBuffer, base64 dönüşümü için
                     reader.readAsArrayBuffer(blob);
                 })
                 .catch(error => console.error('Fotoğraf yükleme hatası:', error));
         });
-
-        // Araç marker'ı
-        let vehicleMarker;
-
-        // Araç ikonu
-        const vehicleIcon = L.icon({
-            iconUrl: 'https://erenahmet95.github.io/gps-tracking/icon.png',  // Kendi aracınızın ikonu
-            iconSize: [50, 50],  // İkonun boyutu
-            iconAnchor: [25, 50],  // İkonun haritada yerleştirildiği nokta
-            popupAnchor: [0, -50]  // Popup'un ikon konumuna göre açılma noktası
-        });
-
-        let vehiclePath = [];
-        let pathLine = null;
-        let startTime = null;
-        let totalDistance = 0;
-        let pathVisible = true;
 
         // Başlangıçta koordinatların ortalamasını al
         setTimeout(() => {
             if (count > 0) {
                 const avgLat = totalLat / count;
                 const avgLon = totalLon / count;
-                console.log(`Araç başlangıç konumu: Latitude = ${avgLat}, Longitude = ${avgLon}`);
-
-                // Araç marker'ını ortalama koordinatlarla oluştur
-                vehicleMarker = L.marker([avgLat, avgLon], { icon: vehicleIcon }).addTo(map);
-
-                // Haritayı ortalama konuma odakla
-                map.setView([avgLat, avgLon], 15);
-
-                // Başlangıç zamanını kaydet
-                startTime = new Date();
-                document.getElementById('startTime').textContent = startTime.toLocaleTimeString();
+                initializeVehicle(avgLat, avgLon);
             }
-        }, 1000); // Fotoğrafların yüklenmesi için zaman tanıyın
+        }, 1000);
+
+        // Araçları başlatma fonksiyonu
+        function initializeVehicle(avgLat, avgLon) {
+            Object.values(vehicles).forEach(vehicle => {
+                const vehicleIcon = L.icon({
+                    iconUrl: vehicle.iconUrl,
+                    iconSize: [50, 50],
+                    iconAnchor: [25, 50],
+                    popupAnchor: [0, -50]
+                });
+
+                vehicle.marker = L.marker([avgLat, avgLon], { icon: vehicleIcon }).addTo(map);
+                vehicle.startTime = new Date();
+                document.getElementById('startTime').textContent = vehicle.startTime.toLocaleTimeString();
+            });
+
+            map.setView([avgLat, avgLon], 15);
+        }
 
         // ArrayBuffer'ı Base64'e dönüştürme fonksiyonu
         function arrayBufferToBase64(buffer) {
@@ -213,35 +228,30 @@
         }
 
         // Dinamik araç konumunu güncelleme fonksiyonu
-        function updateVehicleLocation() {
-            fetch('https://gps-tracking-i0pv.onrender.com/api/vehicle-location')  // Render'daki Flask API adresi
+        function updateVehicleLocation(vehicle) {
+            fetch(vehicle.apiUrl)
                 .then(response => response.json())
                 .then(data => {
                     var newLat = data.latitude;
                     var newLng = data.longitude;
 
-                    // Yol hattına yeni konumu ekleyin
-                    vehiclePath.push([newLat, newLng]);
+                    vehicle.path.push([newLat, newLng]);
 
-                    // Toplam mesafeyi hesaplayın
-                    if (vehiclePath.length > 1) {
-                        const distance = calculateDistance(vehiclePath);
-                        totalDistance += distance;
-                        document.getElementById('totalDistance').textContent = totalDistance.toFixed(2);
+                    if (vehicle.path.length > 1) {
+                        const distance = calculateDistance(vehicle.path);
+                        vehicle.totalDistance += distance;
+                        document.getElementById('totalDistance').textContent = vehicle.totalDistance.toFixed(2);
 
-                        // Yol hattını güncelleyin
-                        if (pathLine) {
-                            map.removeLayer(pathLine);
+                        if (vehicle.pathLine) {
+                            map.removeLayer(vehicle.pathLine);
                         }
-                        pathLine = L.polyline(vehiclePath, { color: 'blue' }).addTo(map);
+                        vehicle.pathLine = L.polyline(vehicle.path, { color: 'blue' }).addTo(map);
                     }
 
-                    // Güncel saat
                     document.getElementById('currentTime').textContent = new Date().toLocaleTimeString();
 
-                    vehicleMarker.setLatLng([newLat, newLng]);
-                    map.setView([newLat, newLng], map.getZoom());  // Haritayı güncel konuma odakla
-                    console.log("Updated vehicle position:", newLat, newLng); // Konsola yeni konumu yazdır
+                    vehicle.marker.setLatLng([newLat, newLng]);
+                    map.setView([newLat, newLng], map.getZoom());
                 })
                 .catch(error => console.error('Araç konumunu güncelleme hatası:', error));
         }
@@ -250,29 +260,45 @@
         function calculateDistance(path) {
             let distance = 0;
             for (let i = 1; i < path.length; i++) {
-                distance += map.distance(path[i - 1], path[i]);  // Mesafeyi metre cinsinden ekleyin
+                distance += map.distance(path[i - 1], path[i]);
             }
-            return distance;  // Toplam mesafeyi döndürün
+            return distance;
         }
 
         // Konumu güncelle ve her 5 saniyede bir güncelle
-        setTimeout(() => {
-            if (vehicleMarker) {
-                updateVehicleLocation();
-                setInterval(updateVehicleLocation, 5000);  // Her 5 saniyede bir konumu günceller
-            }
-        }, 2000); // Araç marker'ı oluşturulduktan sonra konumu güncellemeye başla
+        function startTracking() {
+            setInterval(() => {
+                Object.values(vehicles).forEach(vehicle => {
+                    updateVehicleLocation(vehicle);
+                });
+            }, 5000);
+        }
+
+        startTracking();
+
+        // Araç seçim fonksiyonu
+        function selectVehicle(vehicleId) {
+            currentVehicle = vehicles[vehicleId];
+            document.getElementById('info').style.display = 'block';
+            updateInfoPanel(currentVehicle);
+        }
+
+        // Bilgi panelini güncelle
+        function updateInfoPanel(vehicle) {
+            document.getElementById('startTime').textContent = vehicle.startTime.toLocaleTimeString();
+            document.getElementById('totalDistance').textContent = vehicle.totalDistance.toFixed(2);
+        }
 
         // Güzergahı Gizle/Göster Butonu
         document.getElementById('togglePath').addEventListener('click', function() {
-            pathVisible = !pathVisible;
-            if (pathVisible) {
-                if (pathLine) {
-                    map.addLayer(pathLine);  // Çizgiyi göster
+            currentVehicle.pathVisible = !currentVehicle.pathVisible;
+            if (currentVehicle.pathVisible) {
+                if (currentVehicle.pathLine) {
+                    map.addLayer(currentVehicle.pathLine);
                 }
             } else {
-                if (pathLine) {
-                    map.removeLayer(pathLine);  // Çizgiyi gizle
+                if (currentVehicle.pathLine) {
+                    map.removeLayer(currentVehicle.pathLine);
                 }
             }
         });
