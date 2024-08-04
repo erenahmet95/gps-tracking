@@ -21,7 +21,7 @@
             background-color: #f3f3f3;
         }
 
-        /* Araç menüsü stil ayarları */
+        /* Araçlar menüsü stil ayarları */
         #vehicleMenu {
             position: absolute;
             top: 0;
@@ -31,7 +31,7 @@
             color: white;
             padding: 10px 20px;
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-start; /* Sol tarafa hizala */
             align-items: center;
             z-index: 1000; /* Haritanın üzerinde görünmesi için */
         }
@@ -135,17 +135,16 @@
         <h1 style="margin: 0; font-size: 18px;">Dynamic Multi-Vehicle Tracking Map</h1>
         <ul id="vehicleList">
             <li>
-                Araç 1
+                Araçlar
                 <div class="dropdownMenu">
-                    <button onclick="showVehiclePopup(1)">Mesafe Bilgileri</button>
-                    <button onclick="togglePath(1)">Güzergahı Gizle/Göster</button>
-                </div>
-            </li>
-            <li>
-                Araç 2
-                <div class="dropdownMenu">
-                    <button onclick="showVehiclePopup(2)">Mesafe Bilgileri</button>
-                    <button onclick="togglePath(2)">Güzergahı Gizle/Göster</button>
+                    <div>
+                        Araç 1
+                        <button onclick="showVehiclePopup('Arac1')">Mesafe Bilgileri</button>
+                    </div>
+                    <div>
+                        Araç 2
+                        <button onclick="showVehiclePopup('Arac2')">Mesafe Bilgileri</button>
+                    </div>
                 </div>
             </li>
         </ul>
@@ -173,7 +172,7 @@
 
         // Araçlar için veriler
         const vehicles = {
-            1: {
+            Arac1: {
                 name: "Araç 1",
                 apiUrl: 'https://gps-tracking-i0pv.onrender.com/api/vehicle-location',
                 iconUrl: 'https://erenahmet95.github.io/gps-tracking/icon.png',
@@ -184,7 +183,7 @@
                 startTime: new Date(), // Başlangıç zamanı burada ayarlanır
                 totalDistance: 0
             },
-            2: {
+            Arac2: {
                 name: "Araç 2",
                 apiUrl: 'https://gps-tracking-i0pv.onrender.com/api/vehicle-location', // API adresi değişebilir
                 iconUrl: 'https://erenahmet95.github.io/gps-tracking/icon.png',
@@ -197,7 +196,7 @@
             }
         };
 
-        let currentVehicle = vehicles[1]; // Varsayılan araç
+        let currentVehicle = vehicles['Arac1']; // Varsayılan araç
 
         // Fotoğraf dosyalarını işleme
         const serverURL = 'https://erenahmet95.github.io/gps-tracking';
@@ -278,7 +277,7 @@
                         <p><b>${vehicle.name}</b></p>
                         <p>Başlangıç Saati: ${vehicle.startTime.toLocaleTimeString()}</p>
                         <p>Toplam Mesafe: <span id="distance${vehicle.name.replace(/\s+/g, '')}">0</span> m</p>
-                        <button class="togglePath" onclick="togglePath(${vehicle.name.replace(/\s+/g, '')})">Güzergahı Gizle/Göster</button>
+                        <button class="togglePath" onclick="togglePath('${vehicle.name.replace(/\s+/g, '')}')">Güzergahı Gizle/Göster</button>
                     </div>
                 `;
                 vehicle.marker.bindPopup(popupContent);
@@ -343,7 +342,7 @@
                     <p><b>${vehicle.name}</b></p>
                     <p>Başlangıç Saati: ${vehicle.startTime.toLocaleTimeString()}</p>
                     <p>Toplam Mesafe: <span id="distance${vehicle.name.replace(/\s+/g, '')}">${vehicle.totalDistance.toFixed(2)}</span> m</p>
-                    <button class="togglePath" onclick="togglePath(${vehicle.name.replace(/\s+/g, '')})">Güzergahı Gizle/Göster</button>
+                    <button class="togglePath" onclick="togglePath('${vehicle.name.replace(/\s+/g, '')}')">Güzergahı Gizle/Göster</button>
                 </div>
             `;
             vehicle.marker.bindPopup(popupContent);
@@ -376,7 +375,7 @@
 
         // Güzergahı Gizle/Göster fonksiyonu
         function togglePath(vehicleName) {
-            const vehicle = Object.values(vehicles).find(v => v.name.replace(/\s+/g, '') === vehicleName);
+            const vehicle = vehicles[vehicleName];
             if (!vehicle) return;
 
             vehicle.pathVisible = !vehicle.pathVisible;
@@ -392,8 +391,8 @@
         }
 
         // Mesafe Bilgileri Gösterme fonksiyonu
-        function showVehiclePopup(vehicleId) {
-            const vehicle = vehicles[vehicleId];
+        function showVehiclePopup(vehicleName) {
+            const vehicle = vehicles[vehicleName];
             if (vehicle && vehicle.marker) {
                 vehicle.marker.openPopup();
             }
