@@ -4,7 +4,7 @@ import random
 import os
 import nc_py_api
 
-app = Flask(__name__, static_folder='static')  # static_folder ile static dizini belirtildi
+app = Flask(__name__, static_folder='static')  # Static folder olarak 'static' klasörü belirtilmiştir
 CORS(app)  # CORS'u etkinleştir
 
 # Nextcloud giriş bilgileri ve hedef klasör
