@@ -237,9 +237,15 @@
 
                     vehicle.path.push([newLat, newLng]);
 
+                    console.log(`New position for ${vehicle.name}: [${newLat}, ${newLng}]`);
+                    console.log(`Current path for ${vehicle.name}: `, vehicle.path);
+
                     if (vehicle.path.length > 1) {
                         const distance = calculateDistance(vehicle.path);
                         vehicle.totalDistance += distance;
+                        console.log(`New distance for ${vehicle.name}: ${distance.toFixed(2)} m`);
+                        console.log(`Total distance for ${vehicle.name}: ${vehicle.totalDistance.toFixed(2)} m`);
+
                         document.getElementById(`distance${vehicle.name.replace(/\s+/g, '')}`).textContent = vehicle.totalDistance.toFixed(2);
 
                         if (vehicle.pathLine) {
