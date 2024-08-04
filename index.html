@@ -5,50 +5,72 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dynamic Multi-Vehicle Tracking Map</title>
     <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
         #map {
             height: 600px;
             width: 100%;
+            margin-top: 50px; /* Menü için boşluk bırakma */
         }
 
-        #vehicleButtons {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 1000;
+        /* Araç menüsü stil ayarları */
+        #vehicleMenu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background-color: #333;
+            color: white;
+            padding: 10px;
             display: flex;
-            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .vehicleButton {
+        #vehicleList {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+
+        #vehicleList li {
+            position: relative;
+            margin-right: 15px;
+            cursor: pointer;
+        }
+
+        #vehicleList li:hover .dropdownMenu {
+            display: block;
+        }
+
+        .dropdownMenu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background-color: #444;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .dropdownMenu button {
+            background-color: #28a745;
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 10px;
             border-radius: 5px;
             cursor: pointer;
-            margin-bottom: 10px;
-            display: inline-block;
-            font-size: 14px;
+            margin-bottom: 5px;
+            display: block;
             width: 150px;
         }
 
-        .vehicle1Button {
-            background: #FF5733; /* Red for Vehicle 1 */
-        }
-
-        .vehicle2Button {
-            background: #33B5FF; /* Blue for Vehicle 2 */
-        }
-
-        .infoButton {
-            background: #28a745;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 12px;
-            width: 100%;
-            margin-top: 5px;
+        .dropdownMenu button:hover {
+            background-color: #218838;
         }
 
         .togglePath {
@@ -70,6 +92,20 @@
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
             max-width: 200px;
         }
+
+        .vehicleButton {
+            background-color: #FF5733;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .vehicleButton:hover {
+            background-color: #e74c3c;
+        }
     </style>
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
@@ -87,17 +123,28 @@
     <link rel="icon" type="image/x-icon" href="https://erenahmet95.github.io/gps-tracking/favicon.ico">
 </head>
 <body>
-    <h1>Dynamic Multi-Vehicle Tracking Map</h1>
-    <div id="map"></div>
-
-    <!-- Araç Butonları -->
-    <div id="vehicleButtons">
-        <button class="vehicleButton vehicle1Button" onclick="selectVehicle(1)">Araç 1</button>
-        <button class="infoButton" onclick="showVehiclePopup(1)">Mesafe Bilgileri</button>
-        
-        <button class="vehicleButton vehicle2Button" onclick="selectVehicle(2)">Araç 2</button>
-        <button class="infoButton" onclick="showVehiclePopup(2)">Mesafe Bilgileri</button>
+    <!-- Araçlar için genel menü -->
+    <div id="vehicleMenu">
+        <h1>Dynamic Multi-Vehicle Tracking Map</h1>
+        <ul id="vehicleList">
+            <li>
+                Araç 1
+                <div class="dropdownMenu">
+                    <button onclick="showVehiclePopup(1)">Mesafe Bilgileri</button>
+                    <button onclick="togglePath('Araç 1')">Güzergahı Gizle/Göster</button>
+                </div>
+            </li>
+            <li>
+                Araç 2
+                <div class="dropdownMenu">
+                    <button onclick="showVehiclePopup(2)">Mesafe Bilgileri</button>
+                    <button onclick="togglePath('Araç 2')">Güzergahı Gizle/Göster</button>
+                </div>
+            </li>
+        </ul>
     </div>
+
+    <div id="map"></div>
 
     <script>
         // Haritayı başlatma - Belirtilen koordinatlara ve zoom seviyesine ayarla
@@ -347,3 +394,4 @@
     </script>
 </body>
 </html>
+<
