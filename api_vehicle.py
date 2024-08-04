@@ -1,24 +1,24 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
 import random
 import os
 import nc_py_api
 
-app = Flask(__name__)
-CORS(app)  # Enable CORS
+app = Flask(__name__, static_folder='static')  # static_folder ile static dizini belirtildi
+CORS(app)  # CORS'u etkinleştir
 
-# Nextcloud credentials and target directory
+# Nextcloud giriş bilgileri ve hedef klasör
 NC_URL = "https://cloud.mt-kabelbau.de"
 NC_USER = "Eren Isik"
 NC_PASS = "A+b=123456789"
 TARGET_DIR = "Projekte/WestNetz/Rüthen-Upgrade/99_sonstiges/Baustelle Fotos und Videos/59602 Rüthen"
-OUTPUT_JS_PATH = "photos.js"
+OUTPUT_JS_PATH = "static/photos.js"  # static dizinine kaydet
 
-# Create a Nextcloud client instance
+# Nextcloud istemcisi oluşturma
 nc = nc_py_api.Nextcloud(nextcloud_url=NC_URL, nc_auth_user=NC_USER, nc_auth_pass=NC_PASS)
 
 def list_photos(directory):
-    """List all photo files in the given directory."""
+    """Verilen dizindeki tüm fotoğraf dosyalarını listele."""
     photo_files = []
     for node in nc.files.listdir(directory):
         if node.is_dir:
@@ -28,7 +28,7 @@ def list_photos(directory):
     return photo_files
 
 def create_photos_js(photo_list):
-    """Create a photos.js file from the list of photo files."""
+    """Fotoğraf dosyası listesinden photos.js dosyasını oluştur."""
     js_content = "const photoFiles = [\n"
     for photo in photo_list:
         js_content += f'    "{photo}",\n'
@@ -36,15 +36,15 @@ def create_photos_js(photo_list):
 
     with open(OUTPUT_JS_PATH, "w", encoding="utf-8") as js_file:
         js_file.write(js_content)
-    print(f"photos.js successfully created: {OUTPUT_JS_PATH}")
+    print(f"photos.js başarıyla oluşturuldu: {OUTPUT_JS_PATH}")
 
 def update_photos_js():
-    """Update the photos.js file with the latest photos from Nextcloud."""
+    """Nextcloud'dan en son fotoğrafları alarak photos.js dosyasını güncelle."""
     try:
         photos = list_photos(TARGET_DIR)
         create_photos_js(photos)
     except Exception as e:
-        print(f"Error updating photos.js: {e}")
+        print(f"Hata: photos.js güncellenemedi - {e}")
 
 def get_random_coordinates():
     latitude = 51.49268579318188 + (random.random() - 0.5) * 0.01
@@ -63,10 +63,15 @@ def vehicle_location():
 def update_photos():
     update_photos_js()
     return jsonify({
-        "status": "photos.js updated successfully"
+        "status": "photos.js başarıyla güncellendi"
     })
 
+# Statik photos.js dosyasını sunma
+@app.route('/static/photos.js')
+def serve_photos_js():
+    return send_from_directory(app.static_folder, 'photos.js')
+
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))  # Get the PORT provided by Render
-    update_photos_js()  # Initial update of photos.js
+    port = int(os.environ.get('PORT', 5000))  # Render'ın sağladığı PORT'u al
+    update_photos_js()  # Başlangıçta photos.js'yi güncelle
     app.run(host='0.0.0.0', port=port)
