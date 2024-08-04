@@ -246,7 +246,8 @@
                         console.log(`New distance for ${vehicle.name}: ${distance.toFixed(2)} m`);
                         console.log(`Total distance for ${vehicle.name}: ${vehicle.totalDistance.toFixed(2)} m`);
 
-                        document.getElementById(`distance${vehicle.name.replace(/\s+/g, '')}`).textContent = vehicle.totalDistance.toFixed(2);
+                        // Update the popup content
+                        updateVehiclePopup(vehicle);
 
                         if (vehicle.pathLine) {
                             map.removeLayer(vehicle.pathLine);
@@ -259,6 +260,19 @@
                     map.setView([newLat, newLng], map.getZoom());
                 })
                 .catch(error => console.error('Araç konumunu güncelleme hatası:', error));
+        }
+
+        // Araç pop-up'ını güncelleme fonksiyonu
+        function updateVehiclePopup(vehicle) {
+            const popupContent = `
+                <div class="infoPopup">
+                    <p><b>${vehicle.name}</b></p>
+                    <p>Başlangıç Saati: ${vehicle.startTime.toLocaleTimeString()}</p>
+                    <p>Toplam Mesafe: <span id="distance${vehicle.name.replace(/\s+/g, '')}">${vehicle.totalDistance.toFixed(2)}</span> m</p>
+                    <button class="togglePath" onclick="togglePath('${vehicle.name}')">Güzergahı Gizle/Göster</button>
+                </div>
+            `;
+            vehicle.marker.bindPopup(popupContent);
         }
 
         // Mesafeyi hesaplama fonksiyonu
