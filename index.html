@@ -16,6 +16,9 @@
             height: 600px;
             width: 100%;
             margin-top: 60px; /* Menü için boşluk bırakma */
+            position: relative;
+            z-index: 0;
+            background-color: #f3f3f3;
         }
 
         /* Araç menüsü stil ayarları */
@@ -135,14 +138,14 @@
                 Araç 1
                 <div class="dropdownMenu">
                     <button onclick="showVehiclePopup(1)">Mesafe Bilgileri</button>
-                    <button onclick="togglePath('Araç 1')">Güzergahı Gizle/Göster</button>
+                    <button onclick="togglePath(1)">Güzergahı Gizle/Göster</button>
                 </div>
             </li>
             <li>
                 Araç 2
                 <div class="dropdownMenu">
                     <button onclick="showVehiclePopup(2)">Mesafe Bilgileri</button>
-                    <button onclick="togglePath('Araç 2')">Güzergahı Gizle/Göster</button>
+                    <button onclick="togglePath(2)">Güzergahı Gizle/Göster</button>
                 </div>
             </li>
         </ul>
@@ -275,7 +278,7 @@
                         <p><b>${vehicle.name}</b></p>
                         <p>Başlangıç Saati: ${vehicle.startTime.toLocaleTimeString()}</p>
                         <p>Toplam Mesafe: <span id="distance${vehicle.name.replace(/\s+/g, '')}">0</span> m</p>
-                        <button class="togglePath" onclick="togglePath('${vehicle.name}')">Güzergahı Gizle/Göster</button>
+                        <button class="togglePath" onclick="togglePath(${vehicle.name.replace(/\s+/g, '')})">Güzergahı Gizle/Göster</button>
                     </div>
                 `;
                 vehicle.marker.bindPopup(popupContent);
@@ -340,7 +343,7 @@
                     <p><b>${vehicle.name}</b></p>
                     <p>Başlangıç Saati: ${vehicle.startTime.toLocaleTimeString()}</p>
                     <p>Toplam Mesafe: <span id="distance${vehicle.name.replace(/\s+/g, '')}">${vehicle.totalDistance.toFixed(2)}</span> m</p>
-                    <button class="togglePath" onclick="togglePath('${vehicle.name}')">Güzergahı Gizle/Göster</button>
+                    <button class="togglePath" onclick="togglePath(${vehicle.name.replace(/\s+/g, '')})">Güzergahı Gizle/Göster</button>
                 </div>
             `;
             vehicle.marker.bindPopup(popupContent);
@@ -373,7 +376,7 @@
 
         // Güzergahı Gizle/Göster fonksiyonu
         function togglePath(vehicleName) {
-            const vehicle = Object.values(vehicles).find(v => v.name === vehicleName);
+            const vehicle = Object.values(vehicles).find(v => v.name.replace(/\s+/g, '') === vehicleName);
             if (!vehicle) return;
 
             vehicle.pathVisible = !vehicle.pathVisible;
@@ -389,4 +392,12 @@
         }
 
         // Mesafe Bilgileri Gösterme fonksiyonu
-        function showVehiclePopup
+        function showVehiclePopup(vehicleId) {
+            const vehicle = vehicles[vehicleId];
+            if (vehicle && vehicle.marker) {
+                vehicle.marker.openPopup();
+            }
+        }
+    </script>
+</body>
+</html>
