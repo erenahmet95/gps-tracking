@@ -205,8 +205,8 @@
                     <div class="infoPopup">
                         <p><b>${vehicle.name}</b></p>
                         <p>Başlangıç Saati: ${vehicle.startTime ? vehicle.startTime.toLocaleTimeString() : '-'}</p>
-                        <p>Toplam Mesafe: <span id="distance${vehicle.name}">0</span> m</p>
-                        <button class="togglePath" onclick="togglePath(${vehicle.name})">Güzergahı Gizle/Göster</button>
+                        <p>Toplam Mesafe: <span id="distance${vehicle.name.replace(/\s+/g, '')}">0</span> m</p>
+                        <button class="togglePath" onclick="togglePath('${vehicle.name}')">Güzergahı Gizle/Göster</button>
                     </div>
                 `;
                 vehicle.marker.bindPopup(popupContent).openPopup();
@@ -242,7 +242,7 @@
                     if (vehicle.path.length > 1) {
                         const distance = calculateDistance(vehicle.path);
                         vehicle.totalDistance += distance;
-                        document.getElementById(`distance${vehicle.name}`).textContent = vehicle.totalDistance.toFixed(2);
+                        document.getElementById(`distance${vehicle.name.replace(/\s+/g, '')}`).textContent = vehicle.totalDistance.toFixed(2);
 
                         if (vehicle.pathLine) {
                             map.removeLayer(vehicle.pathLine);
@@ -284,7 +284,10 @@
         }
 
         // Güzergahı Gizle/Göster fonksiyonu
-        function togglePath(vehicle) {
+        function togglePath(vehicleName) {
+            const vehicle = Object.values(vehicles).find(v => v.name === vehicleName);
+            if (!vehicle) return;
+
             vehicle.pathVisible = !vehicle.pathVisible;
             if (vehicle.pathVisible) {
                 if (vehicle.pathLine) {
